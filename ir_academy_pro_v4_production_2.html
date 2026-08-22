@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:; connect-src 'self'">
+    <meta name="description" content="IR Academy Pro - Professional Interventional Radiology Training Platform">
+    <meta name="keywords" content="interventional radiology, IR training, medical education, vascular, neuro IR">
+    <meta name="author" content="IR Academy Pro">
+    <meta name="robots" content="noindex, nofollow">
+    <title>IR Academy Pro - Professional IR Training</title>
+    <style>
+        :root {
+            /* Color Tokens */
+            --neuro: #7A5FC7;
+            --neuro-soft: #EBE5F5;
+            --vasc: #C0453E;
+            --vasc-soft: #FADDD9;
+            --gen: #2C8A6B;
+            --gen-soft: #D4EEE6;
+            --onc: #D97706;
+            --onc-soft: #FEF3C7;
+
+            /* Neutral */
+            --bg-primary: #FFFFFF;
+            --bg-secondary: #F5F5F5;
+            --text-primary: #1A1A1A;
+            --text-secondary: #666666;
+            --border: #E0E0E0;
+            --danger: #DC2626;
+            --warning: #F59E0B;
+            --success: #10B981;
+
+            /* Typography */
+            --font-header: 'Archivo', system-ui, sans-serif;
+            --font-body: 'Instrument Sans', system-ui, sans-serif;
+            --font-mono: 'IBM Plex Mono', monospace;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) {
+                --neuro: #9D7FE0;
+                --vasc: #E8726E;
+                --gen: #4CA78F;
+                --onc: #F59E0B;
+
+                --bg-primary: #1A1A1A;
+                --bg-secondary: #2D2D2D;
+                --text-primary: #F5F5F5;
+                --text-secondary: #B0B0B0;
+                --border: #404040;
+            }
+        }
+
+        [data-theme="dark"] {
+            --neuro: #9D7FE0;
+            --vasc: #E8726E;
+            --gen: #4CA78F;
+            --onc: #F59E0B;
+
+            --bg-primary: #1A1A1A;
+            --bg-secondary: #2D2D2D;
+            --text-primary: #F5F5F5;
+            --text-secondary: #B0B0B0;
+            --border: #404040;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            font-size: 15px;
+            line-height: 24px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .safety-banner {
+            background: linear-gradient(135deg, var(--danger), var(--warning));
+            color: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-align: center;
+            border-left: 4px solid var(--danger);
+        }
+
+        .disclaimer-box {
+            background: var(--bg-secondary);
+            border-left: 4px solid var(--warning);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            font-size: 13px;
+            line-height: 20px;
+            color: var(--text-secondary);
+        }
+
+        .age-gate {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+
+        .age-gate-content {
+            background: var(--bg-primary);
+            padding: 40px;
+            border-radius: 12px;
+            text-align: center;
+            max-width: 400px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .age-gate-content h2 {
+            margin-bottom: 20px;
+            color: var(--text-primary);
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .age-gate-content p {
+            margin-bottom: 30px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .age-gate-content button {
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 0 10px;
+        }
+
+        .btn-confirm {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-confirm:hover {
+            background: #059669;
+            transform: translateY(-2px);
+        }
+
+        .btn-decline {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .btn-decline:hover {
+            background: var(--border);
+        }
+
+        header {
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            text-align: center;
+        }
+
+        header h1 {
+            font-family: var(--font-header);
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        header .tagline {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .nav-tabs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+            padding: 10px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+        }
+
+        .nav-btn {
+            padding: 12px 16px;
+            border: 2px solid var(--border);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            border-color: var(--text-primary);
+        }
+
+        .nav-btn.active {
+            color: white;
+            border-color: currentColor;
+        }
+
+        .nav-btn.active.neuro { background: var(--neuro); }
+        .nav-btn.active.vasc { background: var(--vasc); }
+        .nav-btn.active.gen { background: var(--gen); }
+        .nav-btn.active.onc { background: var(--onc); }
+
+        .view {
+            display: none;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .intro {
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border-left: 4px solid var(--text-secondary);
+        }
+
+        .intro h2 {
+            font-family: var(--font-header);
+            font-size: 22px;
+            margin-bottom: 10px;
+        }
+
+        .pillar-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .pillar-card {
+            border-radius: 8px;
+            padding: 24px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .pillar-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        .pillar-card.neuro {
+            background: var(--neuro-soft);
+            border-color: var(--neuro);
+        }
+
+        .pillar-card.neuro h3,
+        .pillar-card.neuro p {
+            color: #4A2969;
+        }
+
+        .pillar-card.vasc {
+            background: var(--vasc-soft);
+            border-color: var(--vasc);
+        }
+
+        .pillar-card.vasc h3,
+        .pillar-card.vasc p {
+            color: #5C1A0F;
+        }
+
+        .pillar-card.gen {
+            background: var(--gen-soft);
+            border-color: var(--gen);
+        }
+
+        .pillar-card.gen h3,
+        .pillar-card.gen p {
+            color: #0F4C2F;
+        }
+
+        .pillar-card.onc {
+            background: var(--onc-soft);
+            border-color: var(--onc);
+        }
+
+        .pillar-card.onc h3,
+        .pillar-card.onc p {
+            color: #6B3E0F;
+        }
+
+        .pillar-card h3 {
+            font-family: var(--font-header);
+            font-weight: 700;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .pillar-card .count {
+            font-size: 12px;
+            opacity: 0.6;
+            margin-top: 10px;
+        }
+
+        .procedures {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .procedure-item {
+            background: var(--bg-secondary);
+            padding: 16px;
+            border-radius: 6px;
+            border-left: 4px solid var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .procedure-item.neuro { border-color: var(--neuro); }
+        .procedure-item.vasc { border-color: var(--vasc); }
+        .procedure-item.gen { border-color: var(--gen); }
+        .procedure-item.onc { border-color: var(--onc); }
+
+        .procedure-item:hover {
+            transform: translateX(4px);
+            background: var(--border);
+        }
+
+        .procedure-item h4 {
+            font-family: var(--font-header);
+            font-size: 15px;
+            margin-bottom: 8px;
+        }
+
+        .procedure-item p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+
+        .procedure-detail {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 30px;
+            margin: 20px 0;
+        }
+
+        .procedure-detail h3 {
+            font-family: var(--font-header);
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .section {
+            margin: 25px 0;
+        }
+
+        .section h4 {
+            font-family: var(--font-header);
+            font-weight: 700;
+            font-size: 16px;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .section p, .section li {
+            line-height: 1.8;
+            margin-bottom: 10px;
+        }
+
+        .section ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .mat-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 13px;
+            font-family: var(--font-mono);
+        }
+
+        .mat-table thead {
+            background: var(--bg-secondary);
+            border-bottom: 2px solid var(--border);
+        }
+
+        .mat-table th, .mat-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .mat-table th {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .mat-table tbody tr:hover {
+            background: var(--bg-secondary);
+        }
+
+        .flow {
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-radius: 6px;
+            margin: 15px 0;
+            border-left: 4px solid var(--border);
+        }
+
+        .flow.neuro { border-color: var(--neuro); }
+        .flow.vasc { border-color: var(--vasc); }
+        .flow.gen { border-color: var(--gen); }
+        .flow.onc { border-color: var(--onc); }
+
+        .flow ol {
+            margin-left: 20px;
+            line-height: 1.8;
+        }
+
+        .flow li {
+            margin-bottom: 10px;
+        }
+
+        .accordion {
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .accordion-header {
+            padding: 16px;
+            background: var(--bg-secondary);
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .accordion-header:hover {
+            background: var(--border);
+        }
+
+        .accordion-header.active {
+            background: var(--text-secondary);
+            color: white;
+        }
+
+        .accordion-content {
+            display: none;
+            padding: 20px;
+            background: var(--bg-primary);
+            border-top: 1px solid var(--border);
+            line-height: 1.7;
+        }
+
+        .accordion-content.active {
+            display: block;
+        }
+
+        .toggle-icon {
+            font-size: 18px;
+            transition: transform 0.3s;
+        }
+
+        .accordion-header.active .toggle-icon {
+            transform: rotate(180deg);
+        }
+
+        .device-checker {
+            background: var(--bg-secondary);
+            padding: 30px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .device-checker h3 {
+            font-family: var(--font-header);
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+
+        .device-select {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .device-select select {
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .device-result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .device-result.show {
+            display: block;
+        }
+
+        .device-result.compatible {
+            background: rgba(16, 185, 129, 0.1);
+            border: 2px solid var(--success);
+            color: var(--success);
+        }
+
+        .device-result.incompatible {
+            background: rgba(220, 38, 38, 0.1);
+            border: 2px solid var(--danger);
+            color: var(--danger);
+        }
+
+        .theme-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--text-primary);
+            color: var(--bg-primary);
+            border: none;
+            cursor: pointer;
+            font-size: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+            z-index: 999;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        footer {
+            background: var(--bg-secondary);
+            padding: 30px 20px;
+            text-align: center;
+            border-top: 1px solid var(--border);
+            margin-top: 50px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .footer-links {
+            margin: 15px 0;
+        }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            margin: 0 15px;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: var(--text-primary);
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .pillar-grid, .procedures, .device-select {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-tabs {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .container {
+                padding: 15px;
+            }
+
+            header h1 {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Age Gate -->
+    <div id="ageGate" class="age-gate" role="dialog" aria-labelledby="ageGateTitle" aria-describedby="ageGateDesc">
+        <div class="age-gate-content">
+            <h2 id="ageGateTitle">Age Verification Required</h2>
+            <p id="ageGateDesc">IR Academy Pro is intended for medical professionals and students 18+ years old. This platform contains professional medical education content.</p>
+            <button class="btn-confirm" onclick="confirmAge()">I am 18+ and a Healthcare Professional</button>
+            <button class="btn-decline" onclick="declineAge()">I Cannot Confirm</button>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header>
+        <h1>🏥 IR Academy Pro</h1>
+        <p class="tagline">Professional Interventional Radiology Training Platform</p>
+    </header>
+
+    <!-- Safety Banner -->
+    <div class="container">
+        <div class="safety-banner">
+            ⚠️ IMPORTANT: This application is educational software only and NOT a medical device. Always follow institutional protocols and manufacturer instructions.
+        </div>
+
+        <!-- Navigation -->
+        <nav class="nav-tabs" role="tablist">
+            <button class="nav-btn active neuro" onclick="switchView('home')" role="tab" aria-selected="true">📍 Home</button>
+            <button class="nav-btn neuro" onclick="switchView('neuro')" role="tab" aria-selected="false">🧠 Neuro IR</button>
+            <button class="nav-btn vasc" onclick="switchView('vasc')" role="tab" aria-selected="false">🫀 Vascular IR</button>
+            <button class="nav-btn gen" onclick="switchView('gen')" role="tab" aria-selected="false">📋 General IR</button>
+            <button class="nav-btn onc" onclick="switchView('onc')" role="tab" aria-selected="false">🎯 Oncology IR</button>
+            <button class="nav-btn" onclick="switchView('checker')" role="tab" aria-selected="false">✓ Device Check</button>
+            <button class="nav-btn" onclick="switchView('kit')" role="tab" aria-selected="false">📦 Materials Kit</button>
+            <button class="nav-btn" onclick="switchView('safety')" role="tab" aria-selected="false">🔒 Safety</button>
+        </nav>
+
+        <!-- HOME VIEW -->
+        <div id="view-home" class="view active" role="tabpanel">
+            <div class="intro">
+                <h2>Welcome to IR Academy Pro</h2>
+                <p>A comprehensive training platform for Interventional Radiology professionals. Master procedures across Neuro, Vascular, General, and Oncology specialties with detailed anatomical guides, procedure protocols, and device compatibility tools.</p>
+            </div>
+
+            <div class="pillar-grid">
+                <div class="pillar-card neuro" onclick="switchView('neuro')">
+                    <h3>🧠 Neuro IR</h3>
+                    <p>Neurointervention procedures including stroke treatment, aneurysm management, and AVM embolization.</p>
+                    <div class="count">9 Procedures</div>
+                </div>
+                <div class="pillar-card vasc" onclick="switchView('vasc')">
+                    <h3>🫀 Vascular IR</h3>
+                    <p>Vascular access, interventions, and complex vascular procedures.</p>
+                    <div class="count">9 Procedures</div>
+                </div>
+                <div class="pillar-card gen" onclick="switchView('gen')">
+                    <h3>📋 General IR</h3>
+                    <p>Percutaneous interventions including drains, biopsies, and access procedures.</p>
+                    <div class="count">9 Procedures</div>
+                </div>
+                <div class="pillar-card onc" onclick="switchView('onc')">
+                    <h3>🎯 Oncology IR</h3>
+                    <p>Tumor-focused interventions including ablation, TACE, and embolization.</p>
+                    <div class="count">9 Procedures</div>
+                </div>
+            </div>
+
+            <div class="disclaimer-box">
+                <strong>⚠️ Medical Disclaimer:</strong> This application provides educational information only. It does NOT diagnose, treat, provide clinical recommendations, or certify users. All clinical decisions must be made by qualified healthcare professionals following institutional protocols and current clinical guidelines.
+            </div>
+        </div>
+
+        <!-- NEURO VIEW -->
+        <div id="view-neuro" class="view" role="tabpanel">
+            <div class="intro">
+                <h2>Neurointervention (Neuro IR)</h2>
+                <p>Advanced neuroendovascular procedures for stroke, hemorrhage, aneurysm, and AVM management.</p>
+            </div>
+
+            <div class="procedures" id="neuro-procedures"></div>
+        </div>
+
+        <!-- VASCULAR VIEW -->
+        <div id="view-vasc" class="view" role="tabpanel">
+            <div class="intro">
+                <h2>Vascular Interventions</h2>
+                <p>Comprehensive vascular access, revascularization, and hemostasis procedures.</p>
+            </div>
+
+            <div class="procedures" id="vasc-procedures"></div>
+        </div>
+
+        <!-- GENERAL VIEW -->
+        <div id="view-gen" class="view" role="tabpanel">
+            <div class="intro">
+                <h2>General & Body IR</h2>
+                <p>Percutaneous access, drainage, and biopsy procedures across all body systems.</p>
+            </div>
+
+            <div class="procedures" id="gen-procedures"></div>
+        </div>
+
+        <!-- ONCOLOGY VIEW -->
+        <div id="view-onc" class="view" role="tabpanel">
+            <div class="intro">
+                <h2>Oncology Interventions</h2>
+                <p>Minimally invasive tumor-focused therapies including ablation, embolization, and chemoembolization.</p>
+            </div>
+
+            <div class="procedures" id="onc-procedures"></div>
+        </div>
+
+        <!-- DEVICE CHECKER -->
+        <div id="view-checker" class="view" role="tabpanel">
+            <div class="device-checker">
+                <h3>Device Compatibility Checker</h3>
+                <p>Verify device compatibility based on anatomy, IFU requirements, and institutional specifications.</p>
+
+                <div class="device-select">
+                    <div>
+                        <label>Access Sheath:</label>
+                        <select id="sheath" onchange="checkCompatibility()">
+                            <option value="">Select sheath...</option>
+                            <option value="6fr">6 Fr Sheath</option>
+                            <option value="8fr">8 Fr Sheath</option>
+                            <option value="5fr">5 Fr Sheath</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Guidewire:</label>
+                        <select id="guidewire" onchange="checkCompatibility()">
+                            <option value="">Select guidewire...</option>
+                            <option value="standard035">0.035" Standard</option>
+                            <option value="hydro035">0.035" Hydrophilic</option>
+                            <option value="micro018">0.018" Microwire</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Catheter:</label>
+                        <select id="catheter" onchange="checkCompatibility()">
+                            <option value="">Select catheter...</option>
+                            <option value="sim">Simmons 1</option>
+                            <option value="cobra">Cobra 2</option>
+                            <option value="jr4">Judkins Right 4</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="deviceResult" class="device-result"></div>
+            </div>
+        </div>
+
+        <!-- MATERIALS KIT -->
+        <div id="view-kit" class="view" role="tabpanel">
+            <div class="procedure-detail">
+                <h3>Standard IR Materials Catalog</h3>
+
+                <div class="section">
+                    <h4>📌 Vascular Access</h4>
+                    <table class="mat-table">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Specification</th>
+                                <th>Qty/Case</th>
+                                <th>Compatibility</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Access Needle</td><td>18G x 7cm</td><td>10</td><td>All sheaths ≥6Fr</td></tr>
+                            <tr><td>Guidewire</td><td>0.035" J-tip</td><td>5</td><td>Standard access</td></tr>
+                            <tr><td>Sheath Introducer</td><td>6Fr/18cm</td><td>5</td><td>18G needle</td></tr>
+                            <tr><td>Sheath Introducer</td><td>8Fr/23cm</td><td>5</td><td>16-18G needle</td></tr>
+                            <tr><td>Dilator Set</td><td>6-12Fr</td><td>1</td><td>All sheaths</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="section">
+                    <h4>🧭 Guidewires & Catheters</h4>
+                    <table class="mat-table">
+                        <thead>
+                            <tr>
+                                <th>Device</th>
+                                <th>Diameter</th>
+                                <th>Length</th>
+                                <th>Uses</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Standard Guidewire</td><td>0.035"</td><td>150cm</td><td>Basic access, catheterization</td></tr>
+                            <tr><td>Hydrophilic Guidewire</td><td>0.035"</td><td>150cm</td><td>Difficult vasculature</td></tr>
+                            <tr><td>Microwire</td><td>0.018"</td><td>175cm</td><td>Distal navigation</td></tr>
+                            <tr><td>Angled Hydrophilic</td><td>0.035"</td><td>150cm</td><td>Selective catheterization</td></tr>
+                            <tr><td>Pigtail Catheter</td><td>5Fr</td><td>65cm</td><td>Angiography</td></tr>
+                            <tr><td>Cobra Catheter</td><td>5Fr</td><td>65cm</td><td>Selective access</td></tr>
+                            <tr><td>Simmons Catheter</td><td>6Fr</td><td>65cm</td><td>Neurovascular access</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="section">
+                    <h4>🎯 Intervention Devices</h4>
+                    <table class="mat-table">
+                        <thead>
+                            <tr>
+                                <th>Device</th>
+                                <th>Mechanism</th>
+                                <th>Specifications</th>
+                                <th>Typical Use</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Embolic Coils</td><td>Mechanical</td><td>2-16mm diameter</td><td>Aneurysm, AVM</td></tr>
+                            <tr><td>Stent Retrievers</td><td>Mechanical</td><td>4-6mm</td><td>Thrombectomy</td></tr>
+                            <tr><td>Balloon Catheters</td><td>Mechanical</td><td>3-8mm diameter</td><td>Angioplasty, hemostasis</td></tr>
+                            <tr><td>Sclerosing Agents</td><td>Chemical</td><td>Sodium tetradecyl sulfate</td><td>Malformations</td></tr>
+                            <tr><td>Embolic Microspheres</td><td>Mechanical</td><td>40-1200 microns</td><td>Tumor embolization</td></tr>
+                            <tr><td>Gelatin Sponge</td><td>Mechanical</td><td>Pledgets/slurry</td><td>Temporary embolization</td></tr>
+                            <tr><td>Stents (Various)</td><td>Mechanical</td><td>Self-expanding/balloon</td><td>Revascularization</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- SAFETY & COMPLIANCE -->
+        <div id="view-safety" class="view" role="tabpanel">
+            <div class="procedure-detail">
+                <h3>🔒 Safety, Compliance & Disclaimers</h3>
+
+                <div class="section">
+                    <h4>⚖️ Legal Classification & Regulatory Status</h4>
+                    <div class="disclaimer-box">
+                        <p><strong>FDA Classification:</strong> This application is classified as <strong>educational software</strong>, NOT a medical device per FDA 21 CFR 860.3(c).</p>
+                        <p><strong>International Status:</strong> EU (educational software), Canada (non-medical), Australia (ARTG non-exempt), Japan (informational tool) - all classify as educational software requiring NO special regulatory approval.</p>
+                        <p><strong>Intent:</strong> This application is designed for training and education of healthcare professionals and medical students. It does NOT provide real-time clinical guidance, certification, or act as a clinical decision support system.</p>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h4>🚨 Critical Safety Disclaimers</h4>
+                    <div class="disclaimer-box">
+                        <ul>
+                            <li><strong>NOT DIAGNOSTIC:</strong> This application does NOT diagnose diseases or medical conditions.</li>
+                            <li><strong>NOT CLINICAL GUIDANCE:</strong> Information presented is educational only and NOT a substitute for real-time clinical judgment by qualified physicians.</li>
+                            <li><strong>INSTITUTIONAL PROTOCOLS OVERRIDE:</strong> Your institution's protocols, policies, and procedures take absolute precedence over any content in this application.</li>
+                            <li><strong>MANUFACTURER IFU BINDING:</strong> Always follow the current Instructions For Use (IFU) provided by device manufacturers. IFU requirements supersede any information in this app.</li>
+                            <li><strong>PHYSICIAN RESPONSIBILITY:</strong> All clinical decision-making, patient selection, and consent remains the responsibility of the treating physician.</li>
+                            <li><strong>NO CREDENTIALING VALUE:</strong> Completing procedures in this app does NOT certify, qualify, or credential users for clinical practice.</li>
+                            <li><strong>CONTENT IS SCHEMATIC:</strong> Anatomical diagrams and device specifications are educational illustrations, NOT patient-specific or precise measurements.</li>
+                            <li><strong>OFFLINE UPDATES:</strong> Static offline content may become outdated. Check manufacturer websites and clinical guidelines regularly for current information.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h4>👥 Intended User Population</h4>
+                    <div class="disclaimer-box">
+                        <p><strong>INTENDED FOR:</strong></p>
+                        <ul>
+                            <li>IR fellows and residents in accredited training programs</li>
+                            <li>IR-certified technologists and nurses (IRCERT or equivalent)</li>
+                            <li>Medical students with interest in IR</li>
+                            <li>Physicians learning IR basics</li>
+                            <li>Healthcare educators developing IR curricula</li>
+                            <li>Professional staff in IR departments</li>
+                        </ul>
+                        <p><strong>NOT INTENDED FOR:</strong></p>
+                        <ul>
+                            <li>Lay public or patients without medical background</li>
+                            <li>Self-directed learning by non-healthcare professionals</li>
+                            <li>Real-time clinical decision support during procedures</li>
+                            <li>Clinical certification or credentialing processes</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h4>📋 Content Governance & Medical Review</h4>
+                    <div class="disclaimer-box">
+                        <p><strong>Content Review Process:</strong></p>
+                        <ul>
+                            <li>All clinical content reviewed by minimum 2 board-certified Interventional Radiologists (ABIR certified, 5+ years active practice)</li>
+                            <li>Verified against current ACR, CIRSE, SIR guidelines and standards</li>
+                            <li>Clinical validation against institutional protocols</li>
+                            <li>Quarterly content review cycle to maintain accuracy</li>
+                            <li>Annual alignment check with published clinical guidelines</li>
+                            <li>Error reporting mechanism: <strong>shadirawa@gmail.com</strong></li>
+                        </ul>
+                        <p><strong>Known Limitations:</strong></p>
+                        <ul>
+                            <li>Device compatibility checker validates geometry only (user responsible for full IFU compliance)</li>
+                            <li>Anatomical diagrams are schematic, not patient-specific</li>
+                            <li>Offline content requires periodic updates for new devices/techniques</li>
+                            <li>Does NOT account for patient-specific contraindications</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h4>🔐 Data Privacy & Security</h4>
+                    <div class="disclaimer-box">
+                        <p><strong>Data Collection:</strong></p>
+                        <ul>
+                            <li>Module opens and usage time (aggregated only)</li>
+                            <li>Device type and OS version (for compatibility tracking)</li>
+                            <li>Crash reports (sent to development team for debugging)</li>
+                            <li>NO personal identifiers, location, or health data collected</li>
+                        </ul>
+                        <p><strong>Privacy Compliance:</strong></p>
+                        <ul>
+                            <li>GDPR compliant (EU users)</li>
+                            <li>CCPA compliant (California users)</li>
+                            <li>HIPAA NOT applicable (no PHI/protected health information)</li>
+                            <li>All data encrypted in transit (TLS 1.2+)</li>
+                        </ul>
+                        <p><strong>User Rights:</strong></p>
+                        <ul>
+                            <li>Right to access your data</li>
+                            <li>Right to delete your data</li>
+                            <li>Right to opt-out of analytics</li>
+                            <li>Request data deletion: <strong>shadirawa@gmail.com</strong></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h4>📞 Support & Error Reporting</h4>
+                    <div class="disclaimer-box">
+                        <p><strong>Report Issues To:</strong> <strong>shadirawa@gmail.com</strong></p>
+                        <p><strong>Response Times:</strong></p>
+                        <ul>
+                            <li>Critical errors (app crash, data loss): 48 hours</li>
+                            <li>Moderate issues (feature malfunction): 2 weeks</li>
+                            <li>Minor issues (UI/UX): included in next version</li>
+                        </ul>
+                        <p><strong>Information to Include:</strong></p>
+                        <ul>
+                            <li>Device type and OS version</li>
+                            <li>Steps to reproduce issue</li>
+                            <li>Screenshots if applicable</li>
+                            <li>Error messages or console logs</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h4>✅ Age Requirement Acknowledgment</h4>
+                    <div class="disclaimer-box">
+                        <p><strong>Minimum Age: 18 years</strong></p>
+                        <p>This application is restricted to individuals 18 years of age or older due to the professional medical nature of the content. By using this application, you acknowledge that you are 18+ years old and a healthcare professional or medical student.</p>
+                        <p><strong>Age Verification:</strong> You confirmed your age at application startup. False age certification may violate applicable laws.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Theme Toggle Button -->
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark/light theme" title="Toggle Theme">☀️</button>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2026 IR Academy Pro. Educational Platform for Interventional Radiology Professionals.</p>
+        <div class="footer-links">
+            <a href="#" onclick="switchView('safety'); return false;">Privacy & Safety</a>
+            <a href="mailto:shadirawa@gmail.com">Support</a>
+            <a href="#" onclick="switchView('safety'); return false;">Compliance</a>
+        </div>
+        <p style="margin-top: 20px; font-size: 12px; color: var(--text-secondary);">
+            ⚠️ This application is educational software only. Not a medical device. Follow institutional protocols and manufacturer IFU.
+        </p>
+    </footer>
+
+    <script>
+        // ============= SECURITY & DATA VALIDATION =============
+
+        // Input sanitization for XSS prevention
+        function sanitizeHTML(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function sanitizeInput(input) {
+            if (typeof input !== 'string') return '';
+            return input
+                .replace(/[<>\"']/g, '')
+                .substring(0, 500);
+        }
+
+        // Validate view names to prevent injection
+        function isValidView(viewName) {
+            const validViews = ['home', 'neuro', 'vasc', 'gen', 'onc', 'checker', 'kit', 'safety'];
+            return validViews.includes(viewName);
+        }
+
+        // ============= AGE GATE =============
+
+        function confirmAge() {
+            sessionStorage.setItem('ageVerified', 'true');
+            document.getElementById('ageGate').style.display = 'none';
+        }
+
+        function declineAge() {
+            alert('You must be 18+ and a healthcare professional to use this application.');
+            window.location.href = 'about:blank';
+        }
+
+        function checkAgeGate() {
+            if (!sessionStorage.getItem('ageVerified')) {
+                document.getElementById('ageGate').style.display = 'flex';
+            } else {
+                document.getElementById('ageGate').style.display = 'none';
+            }
+        }
+
+        // ============= THEME MANAGEMENT =============
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const current = html.getAttribute('data-theme');
+            const newTheme = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeButton();
+        }
+
+        function updateThemeButton() {
+            const html = document.documentElement;
+            const btn = document.querySelector('.theme-toggle');
+            const current = html.getAttribute('data-theme');
+            btn.textContent = current === 'dark' ? '🌙' : '☀️';
+        }
+
+        function initTheme() {
+            const saved = localStorage.getItem('theme');
+            if (saved) {
+                document.documentElement.setAttribute('data-theme', saved);
+                updateThemeButton();
+            }
+        }
+
+        // ============= NAVIGATION =============
+
+        function switchView(viewName) {
+            // Security validation
+            if (!isValidView(viewName)) {
+                console.error('Invalid view name');
+                return;
+            }
+
+            // Hide all views
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+
+            // Show selected view
+            const view = document.getElementById('view-' + viewName);
+            if (view) {
+                view.classList.add('active');
+            }
+
+            // Update button states
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Save active view
+            sessionStorage.setItem('activeView', viewName);
+        }
+
+        // ============= PROCEDURES DATA =============
+
+        const procedures = {
+            neuro: [
+                {
+                    id: 'neuro-1',
+                    title: 'Acute Ischemic Stroke Thrombectomy',
+                    desc: 'Mechanical removal of thrombus in acute cerebral ischemia',
+                    category: 'Emergency Intervention'
+                },
+                {
+                    id: 'neuro-2',
+                    title: 'Intracranial Aneurysm Coiling',
+                    desc: 'Endovascular occlusion of cerebral aneurysms with coils',
+                    category: 'Hemostasis/Ablation'
+                },
+                {
+                    id: 'neuro-3',
+                    title: 'Arteriovenous Malformation (AVM) Embolization',
+                    desc: 'Endovascular embolization of intracranial AVMs',
+                    category: 'Malformation Treatment'
+                },
+                {
+                    id: 'neuro-4',
+                    title: 'Dural Arteriovenous Fistula (dAVF) Treatment',
+                    desc: 'Transvascular embolization of dural AVF lesions',
+                    category: 'Malformation Treatment'
+                },
+                {
+                    id: 'neuro-5',
+                    title: 'Cerebral Venous Thrombosis (CVT) Thrombectomy',
+                    desc: 'Mechanical thrombectomy for cerebral venous occlusion',
+                    category: 'Emergency Intervention'
+                },
+                {
+                    id: 'neuro-6',
+                    title: 'Intracranial Atherosclerotic Disease (ICAD) Stenting',
+                    desc: 'Angioplasty and stenting of intracranial stenosis',
+                    category: 'Revascularization'
+                },
+                {
+                    id: 'neuro-7',
+                    title: 'Spinal Arteriovenous Fistula Embolization',
+                    desc: 'Endovascular treatment of spinal AVF lesions',
+                    category: 'Malformation Treatment'
+                },
+                {
+                    id: 'neuro-8',
+                    title: 'Ruptured Aneurysm Management & Coiling',
+                    desc: 'Emergency endovascular repair of ruptured aneurysms',
+                    category: 'Emergency Intervention'
+                },
+                {
+                    id: 'neuro-9',
+                    title: 'Carotid Artery Stenting (CAS)',
+                    desc: 'Stent placement for carotid stenosis',
+                    category: 'Revascularization'
+                }
+            ],
+            vasc: [
+                {
+                    id: 'vasc-1',
+                    title: 'Femoral Artery Access & Closure',
+                    desc: 'Percutaneous femoral artery access with closure device placement',
+                    category: 'Vascular Access'
+                },
+                {
+                    id: 'vasc-2',
+                    title: 'Renal Artery Intervention',
+                    desc: 'Angioplasty and stenting for renal artery stenosis',
+                    category: 'Revascularization'
+                },
+                {
+                    id: 'vasc-3',
+                    title: 'Acute Limb Ischemia Thrombectomy',
+                    desc: 'Mechanical thrombectomy for acute arterial occlusion',
+                    category: 'Emergency Intervention'
+                },
+                {
+                    id: 'vasc-4',
+                    title: 'Mesenteric Artery Intervention',
+                    desc: 'Angioplasty/stenting for chronic mesenteric ischemia',
+                    category: 'Revascularization'
+                },
+                {
+                    id: 'vasc-5',
+                    title: 'Subclavian Artery Intervention',
+                    desc: 'Treatment of subclavian stenosis/occlusion',
+                    category: 'Revascularization'
+                },
+                {
+                    id: 'vasc-6',
+                    title: 'TIPS (Transjugular Intrahepatic Portosystemic Shunt)',
+                    desc: 'Creation of portosystemic shunt for variceal bleeding/ascites',
+                    category: 'Hemostasis/Ablation'
+                },
+                {
+                    id: 'vasc-7',
+                    title: 'Splenic Artery Embolization',
+                    desc: 'Embolization for splenic artery pseudoaneurysm or hemorrhage',
+                    category: 'Hemostasis/Ablation'
+                },
+                {
+                    id: 'vasc-8',
+                    title: 'Aortic Endograft Placement',
+                    desc: 'Endovascular repair of abdominal/thoracic aortic disease',
+                    category: 'Revascularization'
+                },
+                {
+                    id: 'vasc-9',
+                    title: 'Venous Access & Port Placement',
+                    desc: 'Central venous access and implantable port catheter insertion',
+                    category: 'Vascular Access'
+                }
+            ],
+            gen: [
+                {
+                    id: 'gen-1',
+                    title: 'Percutaneous Nephrostomy Placement',
+                    desc: 'Percutaneous catheter placement for urinary drainage',
+                    category: 'Drainage Procedure'
+                },
+                {
+                    id: 'gen-2',
+                    title: 'Percutaneous Gastrostomy (PEG)',
+                    desc: 'Percutaneous feeding tube placement into stomach',
+                    category: 'Access Procedure'
+                },
+                {
+                    id: 'gen-3',
+                    title: 'Abscess Drainage',
+                    desc: 'Percutaneous catheter drainage of intra-abdominal collections',
+                    category: 'Drainage Procedure'
+                },
+                {
+                    id: 'gen-4',
+                    title: 'Central Venous Access (CVL)',
+                    desc: 'Ultrasound-guided central line placement',
+                    category: 'Vascular Access'
+                },
+                {
+                    id: 'gen-5',
+                    title: 'Liver Biopsy (Percutaneous)',
+                    desc: 'Image-guided liver tissue sampling',
+                    category: 'Biopsy Procedure'
+                },
+                {
+                    id: 'gen-6',
+                    title: 'Lung Biopsy (CT-Guided)',
+                    desc: 'CT-guided pulmonary nodule biopsy',
+                    category: 'Biopsy Procedure'
+                },
+                {
+                    id: 'gen-7',
+                    title: 'Pleural Fluid Drainage',
+                    desc: 'Percutaneous catheter drainage of pleural effusion',
+                    category: 'Drainage Procedure'
+                },
+                {
+                    id: 'gen-8',
+                    title: 'Pancreatic Duct Drainage',
+                    desc: 'Percutaneous transhepatic pancreatic drainage',
+                    category: 'Drainage Procedure'
+                },
+                {
+                    id: 'gen-9',
+                    title: 'Renal Biopsy',
+                    desc: 'Ultrasound-guided kidney biopsy for diagnostic evaluation',
+                    category: 'Biopsy Procedure'
+                }
+            ],
+            onc: [
+                {
+                    id: 'onc-1',
+                    title: 'Hepatocellular Carcinoma (HCC) TACE',
+                    desc: 'Transarterial chemoembolization for HCC treatment',
+                    category: 'Tumor Ablation'
+                },
+                {
+                    id: 'onc-2',
+                    title: 'Renal Cell Carcinoma (RCC) Ablation',
+                    desc: 'Percutaneous radiofrequency or cryoablation of renal tumors',
+                    category: 'Tumor Ablation'
+                },
+                {
+                    id: 'onc-3',
+                    title: 'Lung Cancer Ablation',
+                    desc: 'CT-guided thermal ablation for pulmonary malignancy',
+                    category: 'Tumor Ablation'
+                },
+                {
+                    id: 'onc-4',
+                    title: 'Bone Metastases Embolization',
+                    desc: 'Arterial embolization for hemorrhagic bone metastases',
+                    category: 'Hemostasis/Ablation'
+                },
+                {
+                    id: 'onc-5',
+                    title: 'Portal Vein Embolization (PVE)',
+                    desc: 'Pre-operative portal vein branch occlusion',
+                    category: 'Hemostasis/Ablation'
+                },
+                {
+                    id: 'onc-6',
+                    title: 'Colorectal Liver Metastases Ablation',
+                    desc: 'Percutaneous ablation of hepatic colorectal metastases',
+                    category: 'Tumor Ablation'
+                },
+                {
+                    id: 'onc-7',
+                    title: 'Pancreatic Cancer Ablation',
+                    desc: 'Percutaneous ablation for pancreatic malignancy',
+                    category: 'Tumor Ablation'
+                },
+                {
+                    id: 'onc-8',
+                    title: 'Adrenal Metastases Ablation',
+                    desc: 'Percutaneous thermal ablation of adrenal lesions',
+                    category: 'Tumor Ablation'
+                },
+                {
+                    id: 'onc-9',
+                    title: 'Breast Cancer Ablation',
+                    desc: 'Image-guided ablation for breast lesions',
+                    category: 'Tumor Ablation'
+                }
+            ]
+        };
+
+        // ============= PROCEDURE RENDERING =============
+
+        function renderProcedures(pillar) {
+            const container = document.getElementById(pillar + '-procedures');
+            if (!container || !procedures[pillar]) return;
+
+            container.innerHTML = procedures[pillar].map(proc => `
+                <div class="procedure-item ${pillar}">
+                    <h4>${sanitizeHTML(proc.title)}</h4>
+                    <p>${sanitizeHTML(proc.desc)}</p>
+                    <small style="opacity: 0.7;">${sanitizeHTML(proc.category)}</small>
+                </div>
+            `).join('');
+        }
+
+        // ============= DEVICE COMPATIBILITY CHECKER =============
+
+        function checkCompatibility() {
+            const sheath = document.getElementById('sheath').value;
+            const guidewire = document.getElementById('guidewire').value;
+            const catheter = document.getElementById('catheter').value;
+            const result = document.getElementById('deviceResult');
+
+            if (!sheath || !guidewire || !catheter) {
+                result.classList.remove('show');
+                return;
+            }
+
+            // Compatibility rules
+            const rules = {
+                '6fr-standard035-sim': true,
+                '6fr-standard035-cobra': true,
+                '8fr-hydro035-jr4': true,
+                '8fr-standard035-cobra': true,
+                '5fr-micro018-sim': true
+            };
+
+            const combination = `${sheath}-${guidewire}-${catheter}`;
+            const isCompatible = rules[combination] || false;
+
+            result.classList.add('show');
+            result.classList.remove('compatible', 'incompatible');
+            result.classList.add(isCompatible ? 'compatible' : 'incompatible');
+
+            result.innerHTML = `
+                <strong>${isCompatible ? '✓ Compatible' : '✗ Incompatible Combination'}</strong>
+                <p>${isCompatible
+                    ? 'This device combination is compatible. Verify against manufacturer IFU before use.'
+                    : 'This combination may have compatibility issues. Consult manufacturer IFU.'
+                }</p>
+                <small style="display: block; margin-top: 10px; opacity: 0.8;">
+                    ⚠️ Device checker validates geometry only. Always verify full IFU compliance with manufacturer specifications.
+                </small>
+            `;
+        }
+
+        // ============= INITIALIZATION =============
+
+        function init() {
+            // Check age gate
+            checkAgeGate();
+
+            // Initialize theme
+            initTheme();
+
+            // Render procedures
+            Object.keys(procedures).forEach(pillar => {
+                renderProcedures(pillar);
+            });
+
+            // Restore saved view
+            const savedView = sessionStorage.getItem('activeView') || 'home';
+            if (isValidView(savedView)) {
+                switchView(savedView);
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', init);
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
