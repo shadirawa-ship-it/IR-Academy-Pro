@@ -2078,6 +2078,12 @@
                     title: 'Pancreatic Neuroendocrine Tumor Embolization',
                     desc: 'Arterial embolization of functional/metastatic pancreatic NET',
                     category: 'Hemostasis/Ablation'
+                },
+                {
+                    id: 'onc-11',
+                    title: 'Trans-Arterial Radioembolization (TARE)',
+                    desc: 'Hepatic selective internal radiation therapy with yttrium-90 microspheres',
+                    category: 'Tumor Ablation'
                 }
             ]
         };
@@ -4106,6 +4112,50 @@
                                     ],
                                     "notes": "<p>pNET embolization is palliative; used for unresectable disease, hepatic metastases, or symptomatic control. <strong>Functional symptoms (hypoglycemia, diarrhea)</strong> often improve rapidly post-embolization. Long-term survival benefit requires combination with systemic therapy (somatostatin analogs, targeted agents).</p>"
                         }
+            },
+            "onc-11": {
+                        "title": "Trans-Arterial Radioembolization (TARE)",
+                        "sections": {
+                                    "anatomy": "<p><strong>TARE (Selective Internal Radiation Therapy — SIRT)</strong> delivers high-dose localized radiation via yttrium-90 (Y-90) microspheres infused into hepatic tumors. Hepatocellular carcinoma (HCC) and metastatic liver disease benefit from this <strong>locoregional therapy</strong> that combines arterial embolization with internal radiation.</p>",
+                                    "protocol": [
+                                                "Diagnostic angiography: assess hepatic arterial anatomy, identify tumor-feeding vessels",
+                                                "Technetium-99m macroaggregated albumin (MAA) scan: quantify lung shunt, estimate Y-90 dose",
+                                                "Administer prophylactic antibiotics and antiemetics",
+                                                "Selective or super-selective microcatheter positioning in tumor-feeding arteries",
+                                                "Infuse Y-90 microspheres (glass or resin) at prescribed activity (GBq); confirm catheter position",
+                                                "Monitor for abdominal pain, nausea; obtain post-procedure imaging if indicated"
+                                    ],
+                                    "devices": [
+                                                "Guide catheter 6–7 Fr",
+                                                "Microcatheter (2.7–3 Fr) for selective positioning",
+                                                "Y-90 microspheres (TheraSphere glass or SIR-Spheres resin)",
+                                                "Syringe, tubing, and manifold for microsphere delivery",
+                                                "Shielded syringe shields and lead aprons for radiation safety"
+                                    ],
+                                    "variants": [
+                                                "Whole-liver TARE (for diffuse HCC or bilobar disease)",
+                                                "Right or left hepatic artery selective TARE",
+                                                "Super-selective TARE (segmental branches for focal lesions)",
+                                                "Combined TARE + sorafenib or atezolizumab (systemic therapy)"
+                                    ],
+                                    "complications": [
+                                                "Hepatic decompensation / liver failure (especially if cirrhotic)",
+                                                "Radiation pneumonitis (lung shunt >20%)",
+                                                "Gastric/duodenal ulceration (non-target embolization)",
+                                                "Pancreatitis (splenic artery shunting)",
+                                                "Cholecystitis, cholangitis",
+                                                "Post-TARE syndrome (abdominal pain, fever, fatigue)"
+                                    ],
+                                    "nursing": [
+                                                "Confirm hepatic function (Child-Pugh, albumin, INR) pre-procedure",
+                                                "Administer prophylactic antibiotics (covers GI flora)",
+                                                "Monitor for severe right upper quadrant pain (hepatic decompensation)",
+                                                "Watch for dyspnea (pulmonary shunt); pulse ox monitoring",
+                                                "Radiation safety: minimize exposure, distance, shielding during preparation/infusion",
+                                                "Educate patient: fatigue common for weeks; serial imaging at 4–8 weeks post-procedure"
+                                    ],
+                                    "notes": "<p><strong>TARE is a bridge or downstaging therapy</strong> for unresectable HCC, hepatic metastases, or end-stage cirrhosis. Response rates are 60–70% at 3 months. Combines local tumor kill (radiation) with vascular occlusion (ischemia). Most effective in select patients with preserved hepatic function (Child-Pugh A–B); use caution in Child-Pugh C or extensive portal thrombosis. Median time-to-progression and overall survival benefit documented in randomized trials (SHARP, SARAH, SORTEM). Always obtain MAA scan to estimate lung shunt and adjust Y-90 activity.</p>"
+                        }
             }
 };
 
@@ -4383,7 +4433,8 @@
                 { title: 'Pancreatic Cancer Ablation', view: 'onc', icon: '🎯', category: 'Tumor Ablation' },
                 { title: 'Adrenal Metastases Ablation', view: 'onc', icon: '🎯', category: 'Tumor Ablation' },
                 { title: 'Breast Cancer Ablation', view: 'onc', icon: '🎯', category: 'Tumor Ablation' },
-                { title: 'Pancreatic Neuroendocrine Tumor Embolization', view: 'onc', icon: '🎯', category: 'Hemostasis/Ablation' }
+                { title: 'Pancreatic Neuroendocrine Tumor Embolization', view: 'onc', icon: '🎯', category: 'Hemostasis/Ablation' },
+                { title: 'Trans-Arterial Radioembolization (TARE)', view: 'onc', icon: '🎯', category: 'Tumor Ablation' }
             ],
             tools: [
                 { title: 'Device Compatibility Checker', view: 'checker', icon: '✓', category: 'Tools' },
