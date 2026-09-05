@@ -1,0 +1,1903 @@
+From c81654045f23bf808e8f9f63fe48baa05b898c9c Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sat, 5 Sep 2026 09:52:02 +0000
+Subject: [PATCH] Fix accessibility, data-model, and trust issues found in
+ external audit
+
+Verified each finding against the actual code before changing anything.
+
+Corrected/removed false claims (in-app and across SAFETY.md, PRIVACY.md,
+LICENSE, README.md):
+- Fake "reviewed by 2+ board-certified ABIR physicians" claim
+- False "you confirmed your age at startup" claim (no age gate exists)
+- Fabricated data-collection/analytics pipeline description (this is a
+  zero-network static file; PRIVACY.md rewritten to state that plainly)
+- Unverified FDA 21 CFR 860.3(c) citation and international regulatory claims
+- Fabricated support-response SLAs
+- Unsourced ACLS medication doses in Cath Lab Safety (removed pending
+  pharmacist/physician review; drug names and guidance retained)
+
+Fixed data-model integrity:
+- Home-page procedure counts were hard-coded and wrong for 3 of 4
+  specialties; now computed from the canonical `procedures` object
+- Search index was a hand-duplicated third copy of every procedure;
+  now derived from `procedures` so it cannot drift out of sync
+- Added a console data-integrity check (procedure/reference parity,
+  duplicate ID detection)
+
+Fixed accessibility:
+- Converted div+onclick cards (home page, search results) to real
+  interactive elements with keyboard support and visible focus states
+- Added a real focus trap to the reference modal (Tab no longer escapes
+  to the page behind it)
+- Added a <main> landmark, prefers-reduced-motion support, and proper
+  ARIA combobox/listbox semantics + arrow-key nav for search
+
+Added:
+- URL routing: sections and individual procedures are addressable via
+  the URL hash, with back/forward support
+- A real SECURITY.md (was the unfilled GitHub template)
+- CHANGELOG entry for this release; version indicator in the footer
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01HbgjCUEXLgfKDoVkyTo9wV
+---
+ CHANGELOG.md |  33 ++++
+ LICENSE      |   8 +-
+ PRIVACY.md   | 491 +++------------------------------------------------
+ README.md    | 303 ++++---------------------------
+ SAFETY.md    | 116 +++---------
+ SECURITY.md  |  35 ++++
+ index.html   | 466 +++++++++++++++++++++++++++++++++---------------
+ 7 files changed, 481 insertions(+), 971 deletions(-)
+ create mode 100644 SECURITY.md
+
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 705a7ad..c874624 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -4,6 +4,39 @@ All notable changes to IR Academy Pro are documented in this file.
+ 
+ ---
+ 
++## [1.1.0] - September 5, 2026
++
++### 🛠️ Trust & accessibility remediation
++
++This release responds to an external review that flagged fabricated compliance/review claims, an unsourced medication-dosing statement, missing accessibility fundamentals, a fragile hand-duplicated data model, and no repository documentation. Findings were independently verified against the actual code before any change was made.
++
++#### Corrected (false or unverifiable claims removed/rewritten)
++- Removed the claim that clinical content was reviewed by "2+ board-certified Interventional Radiologists (ABIR)" — no such review has occurred. Content Governance sections in-app and in `SAFETY.md` now state the actual (pending) review status.
++- Removed the false claim that users "confirmed your age at application startup" — no age gate exists in the current code.
++- Removed a fabricated data-collection/analytics description (module usage, device/OS tracking, crash reporting, Firebase Analytics, Android at-rest encryption) that did not match this static, zero-network single-file application. `PRIVACY.md` was rewritten to describe reality: no data is collected.
++- Removed an unverified specific FDA citation (21 CFR 860.3(c)) and unverified international regulatory classifications from the app, `SAFETY.md`, and `LICENSE`.
++- Removed specific fabricated support-response SLAs (e.g. "48 hours", "2 weeks").
++- Removed unsourced numeric ACLS medication doses from the Cath Lab Safety → Medication Safety section pending pharmacist/physician review; drug names and "have available" guidance retained.
++
++#### Fixed (data integrity)
++- Home-page specialty procedure counts were hard-coded and wrong (all four pillars showed "9 Procedures" even though Vascular has 15, General has 16, and Oncology has 11). Counts are now computed at runtime from the same canonical `procedures` object used everywhere else.
++- The search index was a third, hand-maintained copy of every procedure's title/category, independent from `procedures` and `referenceData`. It is now generated automatically from `procedures`, so it cannot drift out of sync (this is the same class of bug that caused a newly-added procedure to be briefly unsearchable in an earlier update).
++- Added a console-level data-integrity check on load that flags any procedure without a matching reference entry (or vice versa), or any duplicate procedure ID.
++
++#### Fixed (accessibility)
++- The four home-page specialty cards and search-result items were `<div onclick>` elements with no keyboard access at all; converted to real `<button>` elements (or given the roving-listbox pattern, for search results) with visible focus states.
++- The reference modal previously had no focus trap; Tab could move focus out into the page behind it. Added a focus trap that cycles Tab/Shift+Tab within the open modal, plus existing Escape-to-close and focus-restore behavior.
++- Added a `<main>` landmark around the page's primary content (previously a bare `<div>`).
++- Added a `prefers-reduced-motion` media query to disable transitions/animations for users who request it.
++- Added proper ARIA combobox/listbox semantics and arrow-key navigation to the search box.
++
++#### Added
++- URL routing: sections (`#neuro`, `#onc`, …) and individual procedures (`#onc-11`) are now addressable, shareable, and restorable via the URL hash, including browser back/forward support.
++- `SECURITY.md` with a real vulnerability/error-reporting process (previously the unfilled GitHub template).
++- This changelog entry, and a version indicator in the app footer.
++
++---
++
+ ## [1.0.0] - August 22, 2026
+ 
+ ### 🎉 Initial Release
+diff --git a/LICENSE b/LICENSE
+index 111b9e6..f900262 100644
+--- a/LICENSE
++++ b/LICENSE
+@@ -70,13 +70,7 @@ IN NO EVENT SHALL IR ACADEMY PRO BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ 
+ ## Privacy & Data Protection
+ 
+-This software complies with:
+-- GDPR (EU)
+-- CCPA (California)
+-- HIPAA (US Healthcare)
+-- Local healthcare data protection regulations
+-
+-See PRIVACY.md for data handling details.
++This software collects no personal data (see PRIVACY.md for the full, accurate explanation of what it does and does not do). Because no personal data is collected or processed, GDPR/CCPA/HIPAA data-handling obligations generally do not attach to this software's own operation. This is a factual description of this software's data flows, not a formal compliance certification for any organization's use of it — obtain a determination from qualified counsel if one is needed for your deployment.
+ 
+ ## Support & Updates
+ 
+diff --git a/PRIVACY.md b/PRIVACY.md
+index bff5605..52398d8 100644
+--- a/PRIVACY.md
++++ b/PRIVACY.md
+@@ -1,485 +1,38 @@
+-# Privacy Policy - IR Academy Pro
++# IR Academy Pro — Privacy Policy
+ 
+-**Last Updated:** August 2026
++**Last reviewed:** September 2026
+ 
+----
++## Summary
+ 
+-## Overview
++IR Academy Pro is a single, self-contained static HTML file. It has no backend server, no analytics or tracking SDK, and no native mobile app. **It does not collect, transmit, or store any data about you anywhere outside your own browser.**
+ 
+-IR Academy Pro is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and protect your information when you use our educational application.
++An earlier version of this document described a data-collection pipeline (usage analytics, device/OS reporting, crash reporting via a third-party analytics service, an Android app with at-rest encryption, and related retention schedules). **That description did not match the actual application and has been removed.** No such pipeline exists, has ever existed, or is planned. We are correcting the record rather than leaving an inaccurate policy in place.
+ 
+-**Key Principle:** We collect minimal data, do NOT collect personal or health information, and do NOT share data with third parties.
++## What actually happens
+ 
+----
++- Opening `index.html` loads a page with a strict Content-Security-Policy (`default-src 'self'`, `connect-src 'self'`) that blocks the page from making any outbound network request.
++- The only things saved anywhere are your **theme preference** (light/dark) and your **current tab**, stored via your browser's own `localStorage`/`sessionStorage`. This data:
++  - never leaves your device,
++  - is never sent to us or to any third party,
++  - can be cleared at any time by clearing your browser's site data for this page.
++- No cookies are set. No analytics or crash-reporting service is embedded. No third-party scripts are loaded.
+ 
+-## Data We Collect
++## Third parties
+ 
+-### Usage Analytics
+-We collect aggregate, non-identifying information about how you use the app:
+-- ✅ Which procedure modules you open
+-- ✅ Which sections you view
+-- ✅ Time spent in each module
+-- ✅ General learning paths
++None. There are no third-party services (analytics, ads, fonts loaded from a remote CDN, embeds, etc.) in this application.
+ 
+-**This data is aggregated only** - we do not track individual user sessions.
++## Your rights
+ 
+-### Device Information
+-- ✅ Device type (iPhone, Android, tablet, desktop)
+-- ✅ Operating system version
+-- ✅ App version number
+-- ✅ Browser type (for web version)
++Because no personal data is collected or processed by this application, there is no user data for us to provide access to, correct, delete, or port on your behalf — there simply isn't any. If you believe this is inaccurate for a specific deployment of this file (for example, a fork that adds analytics), that deployment's operator is responsible for its own privacy disclosures, not this document.
+ 
+-### Error & Crash Reports
+-- ✅ App crash logs
+-- ✅ Error messages and stack traces
+-- ✅ Time and frequency of errors
+-- ✅ Device state during crash
++## Regulatory frameworks
+ 
+-**Crash logs help us improve app stability and fix bugs.**
++Because this application does not collect personal data, GDPR/CCPA data-subject-request obligations and HIPAA's PHI-handling requirements generally do not attach to its own operation. This is a factual statement about this specific file's data flows, not a legal compliance certification — if you need a formal compliance determination for your organization's use of this software, obtain one from qualified privacy/legal counsel.
+ 
+----
++## Changes to this policy
+ 
+-## Data We Do NOT Collect
++If a future version of this application ever adds any data collection, this document will be updated first, and the change will be described plainly (what is collected, why, and how to opt out) before it ships.
+ 
+-We explicitly DO NOT collect:
++## Contact
+ 
+-❌ **Personal Identifiers**
+-- Names, email addresses, phone numbers
+-- User accounts or login credentials
+-- IP addresses (not logged)
+-- Device identifiers (not stored)
+-- Social Security numbers or government IDs
+-
+-❌ **Health Information**
+-- Medical history or diagnoses
+-- Medications or treatments
+-- Hospital/clinic information
+-- Patient information of any kind
+-- Health insurance data
+-
+-❌ **Location Data**
+-- GPS coordinates
+-- Location services
+-- Geofencing data
+-- Cell tower triangulation
+-
+-❌ **Behavioral Tracking**
+-- Detailed user session tracking
+-- Keystroke logging
+-- Screen recording
+-- Interaction timestamps
+-- Cross-app tracking
+-
+-❌ **Financial Information**
+-- Credit card numbers
+-- Bank account information
+-- Payment methods
+-- Billing information
+-
+-❌ **Biometric Data**
+-- Fingerprints
+-- Facial recognition
+-- Iris scanning
+-- Voice patterns
+-- DNA information
+-
+----
+-
+-## How We Use Your Data
+-
+-### Usage Analytics
+-- Understand which procedures are most accessed
+-- Identify content gaps and improvement areas
+-- Plan feature development based on user needs
+-- Monitor app performance and user experience
+-
+-### Device Information
+-- Ensure compatibility across devices
+-- Optimize app performance for different platforms
+-- Provide technical support effectively
+-- Test app across device types
+-
+-### Error Reports
+-- Identify and fix bugs
+-- Improve app stability
+-- Enhance user experience
+-- Prevent crashes and errors
+-
+-### We Do NOT Use Data For:
+-❌ Targeted advertising  
+-❌ Marketing campaigns  
+-❌ Behavioral profiling  
+-❌ Credit decisions  
+-❌ Employment screening  
+-❌ Insurance underwriting  
+-❌ Surveillance  
+-
+----
+-
+-## Third-Party Services
+-
+-### Firebase Analytics
+-IR Academy Pro uses **Google Firebase Analytics** to collect usage data.
+-
+-**What Firebase Collects:**
+-- App events (module opens, content viewed)
+-- Device information (type, OS, app version)
+-- Crash reports and error logs
+-- Aggregate user statistics
+-
+-**What Firebase Does NOT Collect:**
+-- Personal identifiable information (PII)
+-- Health information
+-- Location data
+-- Detailed user tracking
+-
+-**Firebase Privacy:**
+-- Complies with GDPR and CCPA
+-- Data encrypted in transit (TLS 1.2+)
+-- No third-party sharing
+-- 90-day data retention
+-
+-**Firebase Policy:** https://policies.google.com/privacy
+-
+-### No Other Third Parties
+-We do NOT use:
+-- ❌ Advertising networks
+-- ❌ Social media trackers
+-- ❌ Analytics except Firebase
+-- ❌ Marketing platforms
+-- ❌ Data brokers
+-- ❌ Affiliate networks
+-
+----
+-
+-## Data Security
+-
+-### Encryption in Transit
+-- **Protocol:** TLS 1.2 or higher
+-- **Cipher Suites:** AES-256 encryption
+-- **Certificate:** Valid SSL/TLS certificates
+-- **HSTS:** HTTP Strict Transport Security enabled
+-
+-### Encryption at Rest (Android App)
+-- **Android KeyStore:** Hardware-backed encryption where available
+-- **AES-256:** Advanced Encryption Standard
+-- **Device Lock:** Encryption tied to device security
+-- **Biometric:** Support for fingerprint/face unlock integration
+-
+-### Web Version Security
+-- **Same-origin Policy:** Prevents cross-site attacks
+-- **Content Security Policy (CSP):** Prevents XSS attacks
+-- **Input Sanitization:** All user inputs validated and sanitized
+-- **HTTPS Required:** Only secure connections accepted
+-
+-### Access Controls
+-- ✅ Minimal access principle (employees access only what needed)
+-- ✅ Role-based access control (RBAC)
+-- ✅ Authentication required
+-- ✅ Activity logging
+-- ✅ Regular access reviews
+-
+-### Infrastructure Security
+-- ✅ Secure hosting environment
+-- ✅ Firewall protection
+-- ✅ DDoS mitigation
+-- ✅ Regular security audits
+-- ✅ Vulnerability testing
+-
+----
+-
+-## Data Retention
+-
+-### Analytics Data
+-- **Retention Period:** 90 days
+-- **Deletion:** Automatically purged after 90 days
+-- **Aggregation:** Always anonymized
+-
+-### Crash Reports
+-- **Retention Period:** 30 days
+-- **Deletion:** Automatically purged after 30 days
+-- **Purpose:** Bug identification and fixing only
+-
+-### Error Logs
+-- **Retention Period:** 30 days
+-- **Deletion:** Automatically purged after 30 days
+-- **Access:** Only development team for bug fixes
+-
+-### Historical Data
+-- **Deletion:** No long-term archives
+-- **Backup:** Technical backups only (encrypted)
+-- **Recovery:** Automatic deletion after 90-day retention
+-
+----
+-
+-## Your Privacy Rights
+-
+-### Access Your Data
+-You have the right to request what data we hold about you.
+-
+-**How to Request:**
+-- Email: shadirawa@gmail.com
+-- Subject: "Data Access Request - IR Academy Pro"
+-- Include: Device type, app version, approximate usage dates
+-
+-**Response Time:** 30 days
+-
+-### Delete Your Data
+-You have the right to request deletion of your data.
+-
+-**What We Can Delete:**
+-- Firebase Analytics associated with your device
+-- Crash logs linked to your device
+-- Device identifiers from our systems
+-
+-**What We Cannot Delete:**
+-- Aggregated usage statistics (already anonymized)
+-- Historical error patterns needed for app stability
+-
+-**How to Request:**
+-- Email: shadirawa@gmail.com
+-- Subject: "Data Deletion Request - IR Academy Pro"
+-- Include: Device type, app version, date range
+-
+-**Response Time:** 30 days
+-
+-### Opt-Out of Analytics
+-You can disable analytics collection in app settings:
+-
+-**iOS (App Version):**
+-1. Open Settings > Privacy > Analytics
+-2. Toggle "Share Analytics" OFF
+-
+-**Android (App Version):**
+-1. Open App > Settings > Privacy
+-2. Disable "Usage Analytics"
+-
+-**Web Version:**
+-1. Open Privacy Settings
+-2. Disable "Allow Analytics"
+-
+-### Data Portability
+-You can request your data in a portable format.
+-
+-**How to Request:**
+-- Email: shadirawa@gmail.com
+-- Subject: "Data Portability Request - IR Academy Pro"
+-- Include: Device type and app version
+-
+-**Format:** CSV or JSON file of associated data
+-
+-**Response Time:** 30 days
+-
+-### Non-Discrimination
+-We do NOT:
+-- Discriminate based on privacy preferences
+-- Charge different prices for privacy choices
+-- Provide worse service to users who opt-out
+-- Deny access based on privacy selections
+-
+----
+-
+-## International Compliance
+-
+-### GDPR (European Union)
+-**Compliance Status:** ✅ Fully Compliant
+-
+-- **Legal Basis:** Legitimate interest in healthcare education
+-- **Data Processing:** Minimal and necessary
+-- **Data Subject Rights:** Fully implemented
+-- **DPA:** Not required (no sensitive data collection)
+-- **Standard Clauses:** Not applicable (no international transfers)
+-- **Accountability:** Privacy by design approach
+-
+-**Your GDPR Rights:**
+-- Right to access your data
+-- Right to rectification (correction)
+-- Right to erasure ("right to be forgotten")
+-- Right to restrict processing
+-- Right to data portability
+-- Right to object to processing
+-- Right to lodge complaint with authority
+-
+-### CCPA (California)
+-**Compliance Status:** ✅ Fully Compliant
+-
+-- **Personal Information:** None collected
+-- **Sale of Data:** We do NOT sell data
+-- **Sharing:** No third-party sharing
+-- **Disclosure:** Clear privacy policy
+-- **Opt-Out:** Users can disable analytics
+-
+-**Your CCPA Rights:**
+-- Right to know what data is collected
+-- Right to delete personal information
+-- Right to opt-out of data sales
+-- Right to non-discrimination
+-
+-### GDPR Standard Contractual Clauses
+-Not applicable - we do not collect EU personal data.
+-
+-### GDPR Data Retention
+-- Analytics: 90 days maximum
+-- Crashes: 30 days maximum
+-- No personal data retained
+-
+-### HIPAA (Healthcare)
+-**Compliance Status:** ✅ Not Applicable
+-
+-- This app is educational software, not a covered entity
+-- No Protected Health Information (PHI) collected
+-- Not subject to HIPAA requirements
+-- Users remain responsible for HIPAA compliance in their organizations
+-
+-### COPPA (Children's Privacy)
+-**Compliance Status:** ✅ Compliant
+-
+-- App is NOT intended for children (<13)
+-- 18+ age restriction enforced
+-- No collection of children's data
+-- Designed for healthcare professionals only
+-
+-### California Consumer Privacy Act (CCPA)
+-**Service Provider Compliance:**
+-- We are not a data broker
+-- No sale of consumer information
+-- Limited use of data
+-- Contractual safeguards with Firebase
+-
+----
+-
+-## Children's Privacy
+-
+-### Age Restriction
+-IR Academy Pro is **restricted to users 18 years of age and older.**
+-
+-- ✅ Age gate verification on app launch
+-- ✅ Intended for healthcare professionals only
+-- ✅ No collection of children's data
+-- ✅ Content not suitable for minors
+-
+-### COPPA Compliance
+-We comply with the Children's Online Privacy Protection Act (COPPA):
+-- No collection of data from users under 13
+-- No marketing to children
+-- No tracking of minors
+-- No behavioral profiling of children
+-
+-### Parental Controls
+-The app includes age verification:
+-- Requires confirmation of 18+ status
+-- Cannot bypass age gate
+-- No account for minors
+-
+----
+-
+-## Cookies & Tracking
+-
+-### Web Version Cookies
+-IR Academy Pro uses cookies for:
+-- ✅ User preference persistence (theme selection, tab state)
+-- ✅ Session management (if applicable)
+-- ✅ Security (CSRF protection)
+-
+-### Tracking Technologies
+-We do NOT use:
+-- ❌ Third-party tracking cookies
+-- ❌ Pixel tags or web beacons
+-- ❌ Fingerprinting
+-- ❌ Device IDs in advertising
+-- ❌ Cross-site tracking
+-
+-### Cookie Management
+-Users can:
+-- Disable cookies in browser settings
+-- Clear cookies from browser cache
+-- Use private/incognito browsing
+-- Use cookie management extensions
+-
+-**Note:** Disabling cookies may affect some features (theme persistence).
+-
+----
+-
+-## Changes to This Policy
+-
+-We may update this Privacy Policy periodically to reflect:
+-- Changes in our practices
+-- New regulations or compliance requirements
+-- User feedback and requests
+-- Technology improvements
+-
+-**Notification:**
+-- Major changes will be announced in app
+-- Updated policy will show effective date
+-- Continued use implies acceptance
+-
+-**Current Version:** August 2026
+-
+----
+-
+-## Contact & Requests
+-
+-### Privacy Questions
+-Email: shadirawa@gmail.com  
+-Subject: "Privacy Question - IR Academy Pro"
+-
+-### Data Requests
+-- **Access:** "Data Access Request - IR Academy Pro"
+-- **Deletion:** "Data Deletion Request - IR Academy Pro"
+-- **Portability:** "Data Portability Request - IR Academy Pro"
+-
+-### Regulatory Complaints
+-**EU Users (GDPR):**
+-File a complaint with your national data protection authority.
+-Common contacts: CNIL (France), BfDI (Germany), ICO (UK)
+-
+-**California Users (CCPA):**
+-File a complaint with California Attorney General:
+-https://www.ca.gov/
+-
+-### Support
+-**Response Time:** 30 days for data requests
+-
+-**Contact:**
+-IR Academy Pro Support  
+-Email: shadirawa@gmail.com
+-
+----
+-
+-## Summary of Privacy Practices
+-
+-### What We Collect
+-✅ App usage (which modules you open)  
+-✅ Device type and OS version  
+-✅ Crash reports and errors  
+-
+-### What We Don't Collect
+-❌ Names, emails, phone numbers  
+-❌ Health information  
+-❌ Location data  
+-❌ Payment information  
+-❌ Behavioral tracking  
+-
+-### How We Protect It
+-✅ Encryption in transit (TLS 1.2+)  
+-✅ Encryption at rest (AES-256)  
+-✅ Limited access controls  
+-✅ Automatic deletion (30-90 days)  
+-✅ No third-party sharing  
+-
+-### Your Rights
+-✅ Access your data  
+-✅ Delete your data  
+-✅ Port your data  
+-✅ Opt-out of analytics  
+-✅ Control cookies  
+-
+-### Bottom Line
+-We collect only what we need to improve the app. We protect it securely. We never sell it. We delete it automatically. Your privacy is our responsibility.
+-
+----
+-
+-**For more information about how Firebase Analytics works:**
+-https://policies.google.com/privacy/partners
+-
+-**Questions?** Contact us at shadirawa@gmail.com
++Questions or concerns: **shadirawa@gmail.com**
+diff --git a/README.md b/README.md
+index a95fd30..a9c7606 100644
+--- a/README.md
++++ b/README.md
+@@ -1,292 +1,65 @@
+-# IR Academy Pro 🏥
++# IR Academy Pro
+ 
+-**Professional Interventional Radiology Training Platform**
++A single-file, offline-capable educational reference for Interventional Radiology (IR) procedures, aimed at IR fellows/residents, IR-certified technologists and nurses, medical students, and other healthcare professionals.
+ 
+-A comprehensive, web-based educational application for healthcare professionals, medical students, and IR technicians. Learn procedures across Neuro, Vascular, General, and Oncology specialties with visual guides, anatomy maps, device compatibility tools, and materials specifications.
++**Live site:** https://shadirawa-ship-it.github.io/IR-Academy-Pro/
+ 
+----
++## ⚠️ Review status — please read before relying on this content
+ 
+-## ✨ Features
++This project is under active development and **has not yet completed a formal clinical review**. Procedure descriptions, device specifications, and protocol steps were drafted with AI assistance and have not been independently verified by a credentialed Interventional Radiologist, nursing/technologist representative, pharmacist, or medical physicist.
+ 
+-### 📚 **45+ Procedure Modules**
+-- **Neuro IR** (9 procedures): Stroke treatment, aneurysm coiling, AVM embolization, CVT thrombectomy, ICAD stenting
+-- **Vascular IR** (9 procedures): Renal/mesenteric intervention, limb thrombectomy, TIPS, vascular access
+-- **General IR** (9 procedures): Nephrostomy, gastrostomy, abscess drainage, biopsies, central venous access
+-- **Oncology IR** (9 procedures): HCC TACE, RCC ablation, lung/bone ablation, portal vein embolization
++**Do not treat any figure, dose, threshold, device dimension, or compatibility statement in this application as clinically verified.** Always follow your institution's protocols and the current manufacturer Instructions For Use (IFU). See the in-app **Safety & Compliance** tab for the full disclaimer.
+ 
+-### 🛠️ **Interactive Tools**
+-- **Device Compatibility Checker** - Verify sheath/guidewire/catheter combinations
+-- **Materials Specifications Catalog** - Complete IR equipment reference
+-- **Anatomy Maps** - Visual anatomical guides
+-- **Pre-Procedure Checklist** - Interactive safety checklist
++If you are a qualified reviewer (board-certified IR physician, IR nurse/technologist, pharmacist, or medical physicist) and would like to help review this content, please reach out via the contact below.
+ 
+-### 🎨 **User Experience**
+-- 🌞 Light/dark mode toggle (persistent)
+-- 📱 Fully responsive design (390px - 1200px+)
+-- ⌨️ WCAG 2.1 AA accessibility compliant
+-- 🔒 Age verification (18+ healthcare professionals only)
+-- ⚡ 100% offline capability (no internet required)
++## What this is
+ 
+-### 🔐 **Security & Compliance**
+-- Content Security Policy (CSP) headers
+-- Input sanitization & XSS prevention
+-- GDPR/CCPA privacy compliant
+-- No personal data collection
+-- Medical content reviewed by 2+ IR physicians
++- A **static, self-contained HTML file** (`index.html`) — no build step, no backend, no external data calls (enforced by a strict Content-Security-Policy).
++- A structured library of **51 IR procedures** across four specialty areas (Neuro, Vascular, General, Oncology), each with a 7-section reference (Anatomy, Protocol, Devices, Variants, Complications, Nursing, Clinical Notes) where available.
++- Supporting tools: a device-compatibility reference, a printable pre-procedure checklist, a materials/specifications catalog, and safety/workflow reference sections.
++- Full-text search across every procedure and tool, generated automatically from a single canonical data source so it cannot drift out of sync with the procedure cards.
++- Keyboard-accessible navigation, a focus-trapped reference modal, `prefers-reduced-motion` support, and light/dark themes.
++- Deep-linkable sections and procedures via the URL hash (e.g. `#onc` or `#onc-11`) — links can be bookmarked or shared and will restore the same view.
+ 
+----
++## What this is not
+ 
+-## 📋 Legal & Safety
++- **Not a medical device** and not a substitute for clinical judgment, institutional protocols, or manufacturer IFU.
++- **Not a certification or credentialing tool.**
++- **Not a clinical decision support system** — it has no patient-specific logic.
++- Not intended for use by the lay public.
+ 
+-### **Classification**
+-- **FDA:** Educational software (NOT a medical device per 21 CFR 860.3(c))
+-- **International:** EU, Canada, Australia, Japan - all classify as educational software
+-- **Intended Use:** Training and education only
++See the in-app Safety & Compliance tab for the complete list of disclaimers and known limitations.
+ 
+-### **Critical Disclaimers**
+-⚠️ **This application is educational software only and NOT a medical device.**
++## Data collection
+ 
+-- ❌ Does NOT diagnose or provide clinical guidance
+-- ❌ Does NOT certify or credential users
+-- ⚖️ Institutional protocols take absolute precedence
+-- 📖 Always follow manufacturer Instructions For Use (IFU)
+-- 👨‍⚕️ Clinical decision-making remains physician's responsibility
++None. This is a static file with no analytics, tracking, or network calls beyond loading the page itself. Theme preference and the currently active tab are stored only in your own browser (`localStorage`/`sessionStorage`) and are never transmitted anywhere.
+ 
+-**For complete disclaimers, see [SAFETY.md](./SAFETY.md)**
+-
+----
+-
+-## 🚀 Getting Started
+-
+-### **Option 1: Open in Browser (Easiest)**
+-1. Download `index.html`
+-2. Open in any modern browser (Chrome, Safari, Firefox, Edge)
+-3. Works 100% offline - no installation needed!
+-
+-### **Option 2: Host on Web Server**
+-```bash
+-# Copy index.html to your web server
+-cp index.html /var/www/html/ir-academy/
+-
+-# Ensure HTTPS is configured (TLS 1.2+)
+-```
+-
+-**Recommended servers:**
+-- Apache with mod_ssl
+-- Nginx with SSL
+-- AWS S3 + CloudFront
+-- GitHub Pages (static hosting)
+-- Netlify (free tier available)
+-
+-### **Option 3: Android App (WebView)**
+-```xml
+-<!-- AndroidManifest.xml -->
+-<uses-permission android:name="android.permission.INTERNET" />
+-
+-<!-- Activity -->
+-<WebView
+-    android:id="@+id/webview"
+-    android:layout_width="match_parent"
+-    android:layout_height="match_parent" />
+-```
+-
+-```kotlin
+-val webView = findViewById<WebView>(R.id.webview)
+-webView.loadUrl("file:///android_asset/index.html")
+-```
+-
+----
+-
+-## 📊 Content Structure
++## Project structure
+ 
+ ```
+-IR Academy Pro
+-├── Home Dashboard
+-│   ├── 4 Pillar Cards (Neuro, Vascular, General, Oncology)
+-│   └── Medical Disclaimer
+-├── Neuro IR (9 procedures)
+-├── Vascular IR (9 procedures)
+-├── General IR (9 procedures)
+-├── Oncology IR (9 procedures)
+-├── Device Compatibility Checker
+-├── Materials Kit (Equipment reference)
+-└── Safety & Compliance (Complete disclaimers)
++index.html      # The entire application (HTML + CSS + JS, single file)
++README.md       # This file
++SECURITY.md     # Vulnerability/error reporting process
++LICENSE         # License terms
++CHANGELOG.md    # Version history
+ ```
+ 
+----
+-
+-## 🔧 Configuration
++## Running locally
+ 
+-### **Support Email**
+-Contact: **shadirawa@gmail.com**
++No build step is required — open `index.html` directly in a browser, or serve the directory with any static file server, e.g.:
+ 
+-Response Times:
+-- 🚨 Critical issues (crash/data loss): 48 hours
+-- ⚠️ Moderate issues (features): 2 weeks
+-- 📝 Minor issues (feedback): Next release
+-
+-### **Customization**
+-Edit these variables in `index.html`:
+-
+-```javascript
+-// Support email
+-shadirawa@gmail.com
+-
+-// Age gate minimum
+-18+ years old
+-
+-// Content review cycle
+-Quarterly reviews by 2+ IR physicians
++```bash
++python3 -m http.server 8000
+ ```
+ 
+----
+-
+-## 📱 Browser Compatibility
+-
+-✅ **Fully Supported:**
+-- Chrome/Chromium 90+
+-- Safari 14+
+-- Firefox 88+
+-- Edge 90+
+-- Mobile browsers (iOS Safari, Chrome Mobile)
+-
+-📊 **Responsive Design:**
+-- 🔹 Mobile: 390px - 768px
+-- 🔹 Tablet: 768px - 1024px
+-- 🔹 Desktop: 1024px+
+-
+----
+-
+-## 🔐 Privacy & Data Security
+-
+-### **Data Collection**
+-- ✅ Module opens (aggregate only)
+-- ✅ Device type/OS version
+-- ✅ Crash reports
+-
+-### **Data NOT Collected**
+-- ❌ Personal identifiers
+-- ❌ Location data
+-- ❌ Health information
+-- ❌ Behavioral tracking
+-
+-### **Security**
+-- 🔒 TLS 1.2+ encryption in transit
+-- 🔒 AES-256 encryption at rest
+-- 🔒 No third-party data sharing
+-- 🔒 Data retention: 90 days max
+-
+-**See [PRIVACY.md](./PRIVACY.md) for full compliance details**
+-
+----
+-
+-## 📚 Documentation
+-
+-- **[SAFETY.md](./SAFETY.md)** - Complete safety disclaimers and compliance
+-- **[PRIVACY.md](./PRIVACY.md)** - Privacy policy and GDPR/CCPA compliance
+-- **[SUPPORT_EMAIL_SETUP.md](./SUPPORT_EMAIL_SETUP.md)** - Email management guide
+-- **[DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)** - Hosting instructions
+-- **[CHANGELOG.md](./CHANGELOG.md)** - Version history
+-
+----
+-
+-## 🤝 Contributing
+-
+-### **Content Review Process**
+-All procedure content requires approval by:
+-- ✅ 2+ board-certified Interventional Radiologists (ABIR)
+-- ✅ Current ACR/CIRSE guideline alignment
+-- ✅ Institutional protocol verification
+-- ✅ Medical education specialist review
+-
+-### **Reporting Issues**
+-Found a problem? Report to: **shadirawa@gmail.com**
+-
+-Include:
+-- Device type and OS version
+-- Steps to reproduce
+-- Screenshots (if applicable)
+-- Error messages
+-
+----
+-
+-## 📄 License
+-
+-This project is proprietary software. All rights reserved.
+-
+-**Usage:** 
+-- ✅ Educational and training purposes
+-- ✅ Internal healthcare organization use
+-- ✅ Medical student learning
+-- ❌ Commercial medical device claims
+-- ❌ Clinical decision support without physician oversight
+-
+-See [LICENSE](./LICENSE) for full terms.
+-
+----
+-
+-## 👥 Support & Contact
+-
+-**Support Email:** shadirawa@gmail.com
+-
+-**Response SLA:**
+-| Severity | Response Time | Resolution Target |
+-|---|---|---|
+-| 🚨 Critical (Crash) | 48 hours | 1 week |
+-| ⚠️ Moderate (Bug) | 5 business days | 2 weeks |
+-| 📝 Minor (Feedback) | 10 business days | Next release |
+-
+----
+-
+-## 📊 Technical Specifications
+-
+-- **Format:** Single-file HTML/CSS/JavaScript
+-- **Size:** ~56 KB (compressed)
+-- **Dependencies:** None (self-contained)
+-- **Browser Support:** ES6+
+-- **Accessibility:** WCAG 2.1 AA
+-- **Security:** CSP headers, input sanitization
+-- **Performance:** <1 second load time
+-
+----
+-
+-## 🎯 Roadmap
+-
+-- [ ] Multi-language support (Spanish, French, German)
+-- [ ] Native iOS app (Swift)
+-- [ ] Progress tracking & certificates
+-- [ ] Instructor dashboard
+-- [ ] Mobile app analytics
+-- [ ] Offline sync capability
+-- [ ] Procedure video integration
+-
+----
+-
+-## ⚖️ Disclaimer
+-
+-**IR Academy Pro is an educational platform and NOT a medical device.**
+-
+-This application:
+-- Does NOT provide real-time clinical guidance
+-- Does NOT diagnose medical conditions
+-- Does NOT replace qualified medical judgment
+-- Requires institutional protocol adherence
+-- Requires manufacturer IFU compliance
+-
+-All clinical decisions remain the responsibility of qualified healthcare professionals.
+-
+----
+-
+-## 📞 Contact
+-
+-**Support:** shadirawa@gmail.com
++## Contributing / reporting an issue
+ 
+-**Organization:** IR Academy Pro
++Please report factual or clinical inaccuracies, accessibility problems, or bugs by opening a GitHub issue or emailing **shadirawa@gmail.com**. Clinical-content corrections are the highest priority and should ideally include a citation to a current guideline or primary source.
+ 
+-**Last Updated:** August 2026
++## License
+ 
+----
++See [LICENSE](./LICENSE).
+ 
+-**Made with ❤️ for Interventional Radiology Professionals**
++## Changelog
+ 
+-*Master procedures visually. Train professionally. Practice safely.*
++See [CHANGELOG.md](./CHANGELOG.md).
+diff --git a/SAFETY.md b/SAFETY.md
+index 0eb6216..8aad980 100644
+--- a/SAFETY.md
++++ b/SAFETY.md
+@@ -6,18 +6,11 @@
+ 
+ ## Medical Device Classification
+ 
+-### FDA Classification
+-- **Status:** Educational Software (NOT a medical device)
+-- **Regulatory Basis:** 21 CFR 860.3(c) - Educational content exclusion
+-- **Intended Use:** Training and education for healthcare professionals only
+-- **Clinical Use:** NOT approved for direct patient care or clinical decision-making
+-
+-### International Status
+-- **European Union:** Educational software (non-medical)
+-- **Canada:** Educational materials (non-medical device)
+-- **Australia:** Educational content (TGA non-regulated)
+-- **Japan:** Educational software (PMDA non-regulated)
+-- **All jurisdictions:** Classified as EDUCATIONAL, not medical
++**No formal regulatory determination has been made for this application in any jurisdiction.** An earlier version of this document cited a specific FDA regulation (21 CFR 860.3(c)) and specific international classifications as the basis for a "not a medical device" status; those citations were not verified against the actual regulation text and have been removed rather than left as an unverified legal claim.
++
++- **Intended Use:** Training and education for healthcare professionals only.
++- **Clinical Use:** This application is NOT approved for, and should NOT be used for, direct patient care or real-time clinical decision-making.
++- **Before relying on any regulatory classification for this software** (FDA, EU MDR, or any other jurisdiction's framework), obtain a formal, current assessment from qualified regulatory/legal counsel. Software classification rules change and depend on specific intended-use claims and functionality, which counsel should review directly against the current version of this application.
+ 
+ ---
+ 
+@@ -146,46 +139,24 @@ This application is designed for:
+ 
+ ## Data Safety & Privacy
+ 
+-### What Data Is Collected
+-✅ **Collected:**
+-- Module usage (which sections opened)
+-- Device type and OS version
+-- App crash reports
+-- Aggregate usage statistics only
+-
+-### What Data Is NOT Collected
+-❌ **NOT Collected:**
+-- Personal identifiers (names, emails, IDs)
+-- Location data or GPS
+-- Health information or medical history
+-- Behavioral tracking
+-- Biometric data
+-
+-### Data Security
+-- **In Transit:** TLS 1.2+ encryption
+-- **At Rest:** AES-256 encryption (Android KeyStore)
+-- **Retention:** Analytics 90 days max, crashes 30 days
+-- **Third Parties:** No data sharing with external services
+-- **GDPR/CCPA:** Full compliance with user rights (access, deletion, portability, opt-out)
+-
+-See PRIVACY.md for complete privacy policy.
++**This application collects no data at all.** It is a single static HTML file with no backend, no analytics SDK, and no native app. An earlier version of this document described module-usage tracking, device/OS reporting, crash reporting, and Android-specific at-rest encryption — none of that infrastructure exists, and the description has been removed rather than corrected in place, since it did not describe this product.
++
++The only thing stored anywhere is your theme preference and current tab, saved locally in your own browser and never transmitted.
++
++See [PRIVACY.md](./PRIVACY.md) for the complete, accurate privacy policy.
+ 
+ ---
+ 
+ ## Content Governance
+ 
+-### Medical Review
+-All procedure content is reviewed by:
+-- ✅ **2+ board-certified Interventional Radiologists (ABIR)**
+-- ✅ **Current ACR/CIRSE guideline alignment**
+-- ✅ **Institutional protocol verification**
+-- ✅ **Medical education specialist review**
++### Medical Review — current status
++
++**This content has NOT yet undergone formal clinical review.** An earlier version of this document claimed review by "2+ board-certified Interventional Radiologists (ABIR)" and alignment verification against ACR/CIRSE guidelines. No such review has taken place, and that claim has been removed rather than left in place.
+ 
+-### Review Cycle
+-- **Initial Review:** All content before publication
+-- **Quarterly Review:** Ongoing content accuracy
+-- **Annual Review:** Complete curriculum assessment
+-- **Ad Hoc Review:** Major guideline changes or error reports
++Procedure descriptions, device specifications, and protocol content were drafted with AI assistance and should be treated as unverified pending independent review by a credentialed Interventional Radiologist, nursing/technologist representative, pharmacist (for any medication content), and medical physicist (for radiation-related content).
++
++### Review Cycle (planned, not yet in effect)
++Once formal review is established, this section will describe the actual review cadence and name accountable reviewers. Until then, do not assume any periodic review has occurred.
+ 
+ ### Content Limitations
+ ⚠️ **Known Limitations:**
+@@ -209,12 +180,8 @@ Include:
+ 4. Specific error messages
+ 5. Context (which procedure, what action triggered it)
+ 
+-### Response SLA
+-| Severity | Response Time | Resolution Target |
+-|---|---|---|
+-| 🚨 **Critical** (Crash, Data Loss) | 48 hours | 1 week |
+-| ⚠️ **Moderate** (Feature Bug) | 5 business days | 2 weeks |
+-| 📝 **Minor** (UI/UX Feedback) | 10 business days | Next release |
++### Response expectations
++This project is currently maintained without a guaranteed service-level response time. Reports of clinically significant inaccuracies are treated as the highest priority.
+ 
+ ---
+ 
+@@ -238,47 +205,22 @@ Include:
+ 
+ ---
+ 
+-## Compliance Statements
+-
+-### HIPAA Compliance
+-✅ This application complies with HIPAA regulations:
+-- No protected health information (PHI) collection
+-- No patient data storage
+-- No health information transmission
+-- No third-party data sharing
+-- Appropriate use for healthcare organizations
+-
+-### GDPR Compliance (EU)
+-✅ GDPR Article 6 legal basis:
+-- Legitimate interest in healthcare education
+-- No personal data collection
+-- Data minimization principle
+-- User rights (access, deletion, portability)
+-
+-### CCPA Compliance (California)
+-✅ CCPA compliance:
+-- No personal information collection
+-- No sale of consumer data
+-- User rights (access, deletion, opt-out)
+-- Privacy policy disclosure
+-
+-### COPPA Compliance (Children's Privacy)
+-✅ This app is NOT intended for children:
+-- 18+ age restriction enforced
+-- No collection of children's data
+-- No marketing to minors
+-- Designed for healthcare professionals
++## Data Protection Frameworks
++
++This application does not collect personal data, so it does not process PHI, and GDPR/CCPA data-subject-request mechanisms do not have anything to act on. These are factual statements about this file's data flows, not formal compliance certifications — see [PRIVACY.md](./PRIVACY.md) for the full explanation, and obtain a formal determination from qualified counsel if your organization needs one.
++
++**Regarding age:** this application is intended for adult (18+) healthcare professionals and students, but it does **not** implement an automated age-verification gate. An earlier version of this document claimed "18+ age restriction enforced" — that was inaccurate and has been corrected. If enforced age/credential verification is required for your deployment, it must be built and reviewed separately.
+ 
+ ---
+ 
+ ## Liability Limitations
+ 
+ ### What We Are Responsible For
+-- ✅ Accurate educational content (reviewed by qualified physicians)
+-- ✅ Secure data handling (encrypted transmission and storage)
++- ✅ Disclosing the current, actual review status of clinical content (see Content Governance above) rather than overstating it
++- ✅ Not collecting any user data (see Data Safety & Privacy above)
+ - ✅ Appropriate disclaimers and warnings
+ - ✅ Professional code of conduct
+-- ✅ Timely error reporting and response
++- ✅ Acknowledging and correcting error reports in good faith, without a guaranteed timeline
+ 
+ ### What We Are NOT Responsible For
+ - ❌ Clinical decisions made using this application
+@@ -322,8 +264,8 @@ This application supports the professional codes of:
+ 
+ ## Regulatory Acknowledgments
+ 
+-### FDA Statement
+-This software is classified under 21 CFR 860.3(c) as educational content, not a medical device. It is not subject to premarket approval or FDA enforcement as a medical device.
++### Regulatory status
++No formal FDA (or other jurisdiction) classification determination has been made for this software — see "Medical Device Classification" above. Do not rely on a specific regulatory citation for this product without independent legal/regulatory verification.
+ 
+ ### Clinical Laboratory Improvement Amendments (CLIA)
+ This application is not a clinical laboratory test and does not require CLIA certification.
+diff --git a/SECURITY.md b/SECURITY.md
+new file mode 100644
+index 0000000..d3e075d
+--- /dev/null
++++ b/SECURITY.md
+@@ -0,0 +1,35 @@
++# Security Policy
++
++## Scope
++
++IR Academy Pro is a single, self-contained static HTML file (`index.html`) with no backend server, no database, no user accounts, and no network calls beyond loading the page itself (enforced by a strict Content-Security-Policy: `default-src 'self'; connect-src 'self'`). This significantly limits the attack surface compared to a typical web application, but the following are still in scope for security reports:
++
++- Cross-site scripting (XSS) or HTML/script injection via any input field (e.g. the search box)
++- Any way the page's Content-Security-Policy can be bypassed
++- Any way client-side data (theme preference, active tab, stored only in `localStorage`/`sessionStorage`) could be exfiltrated
++- Supply-chain concerns, if this project ever adds external dependencies (it currently has none)
++
++## Supported versions
++
++This is a single-file application with a linear version history in [CHANGELOG.md](./CHANGELOG.md). Only the current version published at the live site (https://shadirawa-ship-it.github.io/IR-Academy-Pro/) and in the `main` branch of this repository is supported. There are no older maintained release branches.
++
++## Reporting a vulnerability
++
++Please report suspected security issues privately, not as a public GitHub issue, by emailing:
++
++**shadirawa@gmail.com**
++
++Include:
++1. A description of the issue and its potential impact
++2. Steps to reproduce (a minimal example is ideal)
++3. The URL or file version where you observed it
++
++There is currently no guaranteed response SLA (this is a small, independently maintained project), but security reports are treated as the highest priority and will be acknowledged as soon as possible.
++
++## Reporting a clinical-content or accuracy issue
++
++This is not a traditional "security" issue, but for an educational medical reference, an inaccurate procedure step, device specification, or (especially) a medication dose is a safety-relevant defect. Please report these the same way — email **shadirawa@gmail.com** with the specific page/procedure, the issue, and ideally a citation to a current guideline or primary source — rather than filing them as generic bugs.
++
++## Disclosure
++
++Given the small scope and audience of this project, coordinated disclosure timelines will be worked out directly with the reporter on a case-by-case basis rather than a fixed policy.
+diff --git a/index.html b/index.html
+index 7f704f6..f41a77c 100644
+--- a/index.html
++++ b/index.html
+@@ -67,6 +67,25 @@
+         }
+ 
+         * { margin: 0; padding: 0; box-sizing: border-box; }
++
++        .visually-hidden {
++            position: absolute;
++            width: 1px; height: 1px;
++            padding: 0; margin: -1px;
++            overflow: hidden;
++            clip: rect(0, 0, 0, 0);
++            white-space: nowrap;
++            border: 0;
++        }
++
++        @media (prefers-reduced-motion: reduce) {
++            *, *::before, *::after {
++                animation-duration: 0.001ms !important;
++                animation-iteration-count: 1 !important;
++                transition-duration: 0.001ms !important;
++                scroll-behavior: auto !important;
++            }
++        }
+         body {
+             background: var(--bg-primary);
+             color: var(--text-primary);
+@@ -325,6 +344,13 @@
+             transition: all 0.3s;
+             border: 2px solid transparent;
+             color: #000000;
++            /* Reset native <button> defaults so it still looks like a card */
++            display: block;
++            width: 100%;
++            text-align: left;
++            font: inherit;
++            appearance: none;
++            -webkit-appearance: none;
+         }
+ 
+         .pillar-card:hover {
+@@ -332,6 +358,15 @@
+             box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+         }
+ 
++        .pillar-card:focus-visible,
++        .procedure-item:focus-visible,
++        .search-result-item:focus-visible,
++        .nav-btn:focus-visible,
++        .theme-toggle:focus-visible {
++            outline: 3px solid #1976D2;
++            outline-offset: 2px;
++        }
++
+         .pillar-card.neuro {
+             background: var(--neuro-soft);
+             border-color: var(--neuro);
+@@ -812,7 +847,8 @@
+             gap: 10px;
+         }
+ 
+-        .search-result-item:hover {
++        .search-result-item:hover,
++        .search-result-item.highlighted {
+             background: var(--bg-secondary);
+             padding-left: 16px;
+         }
+@@ -929,20 +965,27 @@
+     <!-- Search Container -->
+     <div class="search-container">
+         <div class="search-box">
+-            <span class="search-icon">🔍</span>
++            <span class="search-icon" aria-hidden="true">🔍</span>
++            <label for="searchInput" class="visually-hidden">Search procedures and devices</label>
+             <input
+                 type="text"
+                 id="searchInput"
+                 placeholder="Search procedures, devices..."
+-                onkeyup="handleSearch()"
++                role="combobox"
++                aria-expanded="false"
++                aria-controls="searchResults"
++                aria-autocomplete="list"
++                autocomplete="off"
++                onkeyup="handleSearchKeyup(event)"
++                onkeydown="handleSearchKeydown(event)"
+                 onfocus="showSearchResults()"
+             >
+-            <div class="search-results" id="searchResults"></div>
++            <div class="search-results" id="searchResults" role="listbox" aria-label="Search results"></div>
+         </div>
+     </div>
+ 
+     <!-- Safety Banner -->
+-    <div class="container">
++    <main class="container">
+         <div class="safety-banner">
+             ⚠️ IMPORTANT: This application is educational software only and NOT a medical device. Always follow institutional protocols and manufacturer instructions.
+         </div>
+@@ -970,26 +1013,26 @@
+             </div>
+ 
+             <div class="pillar-grid">
+-                <div class="pillar-card neuro" onclick="switchView('neuro')">
++                <button type="button" class="pillar-card neuro" onclick="switchView('neuro')">
+                     <h3>🧠 Neuro IR</h3>
+                     <p>Neurointervention procedures including stroke treatment, aneurysm management, and AVM embolization.</p>
+-                    <div class="count">9 Procedures</div>
+-                </div>
+-                <div class="pillar-card vasc" onclick="switchView('vasc')">
++                    <div class="count" data-pillar-count="neuro"></div>
++                </button>
++                <button type="button" class="pillar-card vasc" onclick="switchView('vasc')">
+                     <h3>🫀 Vascular IR</h3>
+                     <p>Vascular access, interventions, and complex vascular procedures.</p>
+-                    <div class="count">9 Procedures</div>
+-                </div>
+-                <div class="pillar-card gen" onclick="switchView('gen')">
++                    <div class="count" data-pillar-count="vasc"></div>
++                </button>
++                <button type="button" class="pillar-card gen" onclick="switchView('gen')">
+                     <h3>📋 General IR</h3>
+                     <p>Percutaneous interventions including drains, biopsies, and access procedures.</p>
+-                    <div class="count">9 Procedures</div>
+-                </div>
+-                <div class="pillar-card onc" onclick="switchView('onc')">
++                    <div class="count" data-pillar-count="gen"></div>
++                </button>
++                <button type="button" class="pillar-card onc" onclick="switchView('onc')">
+                     <h3>🎯 Oncology IR</h3>
+                     <p>Tumor-focused interventions including ablation, TACE, and embolization.</p>
+-                    <div class="count">9 Procedures</div>
+-                </div>
++                    <div class="count" data-pillar-count="onc"></div>
++                </button>
+             </div>
+ 
+             <div class="disclaimer-box">
+@@ -1142,9 +1185,8 @@
+                 <div class="section">
+                     <h4>⚖️ Legal Classification & Regulatory Status</h4>
+                     <div class="disclaimer-box">
+-                        <p><strong>FDA Classification:</strong> This application is classified as <strong>educational software</strong>, NOT a medical device per FDA 21 CFR 860.3(c).</p>
+-                        <p><strong>International Status:</strong> EU (educational software), Canada (non-medical), Australia (ARTG non-exempt), Japan (informational tool) - all classify as educational software requiring NO special regulatory approval.</p>
+-                        <p><strong>Intent:</strong> This application is designed for training and education of healthcare professionals and medical students. It does NOT provide real-time clinical guidance, certification, or act as a clinical decision support system.</p>
++                        <p><strong>Intent:</strong> This application is designed as static educational/reference material for training and education of healthcare professionals and medical students. It does NOT provide real-time clinical guidance, patient-specific recommendations, certification, or act as a clinical decision support system, and it makes no automated calculations that direct patient care.</p>
++                        <p><strong>Regulatory status:</strong> No formal determination of medical device status (FDA, EU MDR, or other jurisdictions) has been made for this application. The specific classification citations previously shown on this page were not verified and have been removed. Before relying on any regulatory classification claim for this software, obtain a formal assessment from qualified regulatory/legal counsel in each jurisdiction where it will be used.</p>
+                     </div>
+                 </div>
+ 
+@@ -1189,20 +1231,18 @@
+                 <div class="section">
+                     <h4>📋 Content Governance & Medical Review</h4>
+                     <div class="disclaimer-box">
+-                        <p><strong>Content Review Process:</strong></p>
++                        <p><strong>Current Review Status:</strong></p>
+                         <ul>
+-                            <li>All clinical content reviewed by minimum 2 board-certified Interventional Radiologists (ABIR certified, 5+ years active practice)</li>
+-                            <li>Verified against current ACR, CIRSE, SIR guidelines and standards</li>
+-                            <li>Clinical validation against institutional protocols</li>
+-                            <li>Quarterly content review cycle to maintain accuracy</li>
+-                            <li>Annual alignment check with published clinical guidelines</li>
+-                            <li>Error reporting mechanism: <strong>shadirawa@gmail.com</strong></li>
++                            <li><strong>This content has NOT yet completed formal clinical review</strong> by a credentialed, board-certified Interventional Radiologist, nursing/technologist representative, pharmacist, or medical physicist.</li>
++                            <li>Procedure descriptions, device specifications, and protocol steps were drafted with AI assistance and are provided for general educational orientation only, pending independent expert verification.</li>
++                            <li>Do NOT treat any figure, dose, threshold, device dimension, or compatibility statement in this application as verified until it carries a named reviewer and review date.</li>
++                            <li>Error/inaccuracy reporting: <strong>shadirawa@gmail.com</strong></li>
+                         </ul>
+                         <p><strong>Known Limitations:</strong></p>
+                         <ul>
+                             <li>Device compatibility checker validates geometry only (user responsible for full IFU compliance)</li>
+                             <li>Anatomical diagrams are schematic, not patient-specific</li>
+-                            <li>Offline content requires periodic updates for new devices/techniques</li>
++                            <li>Static content requires periodic updates for new devices/techniques and changed guidelines</li>
+                             <li>Does NOT account for patient-specific contraindications</li>
+                         </ul>
+                     </div>
+@@ -1213,38 +1253,23 @@
+                     <div class="disclaimer-box">
+                         <p><strong>Data Collection:</strong></p>
+                         <ul>
+-                            <li>Module opens and usage time (aggregated only)</li>
+-                            <li>Device type and OS version (for compatibility tracking)</li>
+-                            <li>Crash reports (sent to development team for debugging)</li>
+-                            <li>NO personal identifiers, location, or health data collected</li>
++                            <li>This application is a single, self-contained static file. It makes no network requests, runs no analytics or tracking scripts, and has no backend server.</li>
++                            <li>No usage data, device information, crash reports, or any other data is collected, transmitted, or stored outside your own browser.</li>
++                            <li>The only data saved is your theme preference and current tab, stored locally in your browser (localStorage/sessionStorage) and never sent anywhere.</li>
+                         </ul>
+                         <p><strong>Privacy Compliance:</strong></p>
+                         <ul>
+-                            <li>GDPR compliant (EU users)</li>
+-                            <li>CCPA compliant (California users)</li>
+-                            <li>HIPAA NOT applicable (no PHI/protected health information)</li>
+-                            <li>All data encrypted in transit (TLS 1.2+)</li>
+-                        </ul>
+-                        <p><strong>User Rights:</strong></p>
+-                        <ul>
+-                            <li>Right to access your data</li>
+-                            <li>Right to delete your data</li>
+-                            <li>Right to opt-out of analytics</li>
+-                            <li>Request data deletion: <strong>shadirawa@gmail.com</strong></li>
++                            <li>Because no personal data is collected or processed, GDPR/CCPA data-subject obligations generally do not attach to this application's own operation — this is a statement about this app's data flows, not general legal advice.</li>
++                            <li>HIPAA does not apply: no PHI is collected, stored, or transmitted.</li>
+                         </ul>
++                        <p><strong>Questions:</strong> <strong>shadirawa@gmail.com</strong></p>
+                     </div>
+                 </div>
+ 
+                 <div class="section">
+                     <h4>📞 Support & Error Reporting</h4>
+                     <div class="disclaimer-box">
+-                        <p><strong>Report Issues To:</strong> <strong>shadirawa@gmail.com</strong></p>
+-                        <p><strong>Response Times:</strong></p>
+-                        <ul>
+-                            <li>Critical errors (app crash, data loss): 48 hours</li>
+-                            <li>Moderate issues (feature malfunction): 2 weeks</li>
+-                            <li>Minor issues (UI/UX): included in next version</li>
+-                        </ul>
++                        <p><strong>Report Issues To:</strong> <strong>shadirawa@gmail.com</strong> or by opening an issue on the project's GitHub repository. This is currently maintained without a guaranteed service-level response time; critical clinical-content errors are the highest priority.</p>
+                         <p><strong>Information to Include:</strong></p>
+                         <ul>
+                             <li>Device type and OS version</li>
+@@ -1256,11 +1281,9 @@
+                 </div>
+ 
+                 <div class="section">
+-                    <h4>✅ Age Requirement Acknowledgment</h4>
++                    <h4>✅ Intended Audience</h4>
+                     <div class="disclaimer-box">
+-                        <p><strong>Minimum Age: 18 years</strong></p>
+-                        <p>This application is restricted to individuals 18 years of age or older due to the professional medical nature of the content. By using this application, you acknowledge that you are 18+ years old and a healthcare professional or medical student.</p>
+-                        <p><strong>Age Verification:</strong> You confirmed your age at application startup. False age certification may violate applicable laws.</p>
++                        <p><strong>Intended for adult (18+) healthcare professionals and medical/nursing students.</strong> This application does not implement an automated age or credential verification step — it relies on the intended-use restriction stated here and in the header disclaimer, not on a technical gate. If you require enforced age/credential verification for your deployment, that must be added and reviewed separately before public release.</p>
+                     </div>
+                 </div>
+             </div>
+@@ -1560,7 +1583,7 @@
+                             <li><strong>Sedatives:</strong> Have reversal agents available (flumazenil for benzodiazepines, naloxone for opioids). Titrate to effect; monitor continuously during administration.</li>
+                             <li><strong>Anticoagulation:</strong> Heparin dosing based on weight/ACT (activated clotting time). Protamine available for reversal. Monitor ACT every 30-60 minutes during case.</li>
+                             <li><strong>Vasodilators:</strong> Nitroglycerin, verapamil for vasospasm; have vasopressor (phenylephrine, dopamine) for hypotension. Know appropriate doses and contraindications.</li>
+-                            <li><strong>Emergency Medications:</strong> Epinephrine (0.1-0.5 mg IV/IO), atropine (0.5-1 mg), amiodarone (300 mg IV), lidocaine (100 mg) for ACLS protocols immediately accessible.</li>
++                            <li><strong>Emergency Medications:</strong> Epinephrine, atropine, amiodarone, and lidocaine for ACLS protocols must be immediately accessible. <em>Specific doses are intentionally omitted here — follow your institution's current ACLS algorithm and pharmacy-verified dosing, not this app, for any emergency drug administration.</em></li>
+                             <li><strong>Adverse Reactions:</strong> Have protocol for contrast reaction (mild/moderate/severe). Steroids, antihistamines, epinephrine ready. Observe all patients post-procedure.</li>
+                             <li><strong>Storage & Expiration:</strong> Store medications at correct temperature. Check expiration dates; discard expired medications immediately. Organize crash cart medications clearly.</li>
+                             <li><strong>Documentation:</strong> Record all medications administered, times, doses, patient response. Include any adverse reactions or complications.</li>
+@@ -1670,7 +1693,7 @@
+                 </div>
+             </div>
+         </div>
+-    </div>
++    </main>
+ 
+     <!-- Theme Toggle Button -->
+     <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark/light theme" title="Toggle Theme">☀️</button>
+@@ -1686,6 +1709,9 @@
+         <p style="margin-top: 20px; font-size: 12px; color: var(--text-secondary);">
+             ⚠️ This application is educational software only. Not a medical device. Follow institutional protocols and manufacturer IFU.
+         </p>
++        <p style="margin-top: 8px; font-size: 11px; color: var(--text-secondary);">
++            Version 1.1.0 — clinical content pending formal review. See <a href="#" onclick="switchView('safety'); return false;" style="color: inherit;">Safety &amp; Compliance</a> and <a href="https://github.com/shadirawa-ship-it/ir-academy-pro/blob/main/CHANGELOG.md" target="_blank" rel="noopener" style="color: inherit;">changelog</a>.
++        </p>
+     </footer>
+ 
+     <script>
+@@ -1743,7 +1769,13 @@
+ 
+         // ============= NAVIGATION =============
+ 
+-        function switchView(viewName) {
++        // `switchView` is the single entry point used by every onclick/keyboard handler in
++        // the page. It renders the view AND keeps the URL in sync (so a section can be
++        // bookmarked, shared, or restored on reload/back-forward) unless the caller is
++        // itself responding to a URL change (opts.skipHistory), in which case it only renders.
++        function switchView(viewName, opts) {
++            opts = opts || {};
++
+             // Security validation
+             if (!isValidView(viewName)) {
+                 console.error('Invalid view name');
+@@ -1761,14 +1793,69 @@
+ 
+             // Update button states — highlight this view's nav button deterministically
+             // (works for both click and programmatic calls; no reliance on global event)
+-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
++            document.querySelectorAll('.nav-btn').forEach(btn => {
++                btn.classList.remove('active');
++                if (btn.getAttribute('role') === 'tab') btn.setAttribute('aria-selected', 'false');
++            });
+             const navBtn = document.querySelector('.nav-btn[onclick*="\'' + viewName + '\'"]');
+-            if (navBtn) navBtn.classList.add('active');
++            if (navBtn) {
++                navBtn.classList.add('active');
++                if (navBtn.getAttribute('role') === 'tab') navBtn.setAttribute('aria-selected', 'true');
++            }
+ 
+-            // Save active view
++            // Save active view (kept as a same-tab fallback; the URL hash is now the primary,
++            // shareable record of navigation state — see navigateHash()/restoreFromHash())
+             sessionStorage.setItem('activeView', viewName);
++
++            if (!opts.skipHistory) {
++                navigateHash('#' + viewName);
++            }
++
++            // Move focus to the new view's heading for keyboard/screen-reader users, so
++            // focus doesn't silently stay on a now-hidden control.
++            if (!opts.skipFocus && view) {
++                const heading = view.querySelector('h2, h3');
++                if (heading) {
++                    heading.setAttribute('tabindex', '-1');
++                    heading.focus({ preventScroll: false });
++                }
++            }
++        }
++
++        // ============= URL ROUTING =============
++        // Sections (#home, #neuro, ...) and individual procedures (#onc-11) are both
++        // addressable, so a link can restore or share the exact active section/procedure.
++
++        function navigateHash(hash) {
++            if (location.hash !== hash) {
++                history.pushState({ hash: hash }, '', hash);
++            }
+         }
+ 
++        function restoreFromHash() {
++            const raw = (location.hash || '').replace(/^#/, '');
++
++            if (!raw) {
++                switchView('home', { skipHistory: true, skipFocus: true });
++                return;
++            }
++            if (isValidView(raw)) {
++                switchView(raw, { skipHistory: true, skipFocus: true });
++                return;
++            }
++            // Is this a procedure id (e.g. "onc-11")? Switch to its pillar, then open it.
++            if (typeof referenceData !== 'undefined' && referenceData[raw]) {
++                const pillar = Object.keys(procedures).find(p => procedures[p].some(pr => pr.id === raw));
++                if (pillar) switchView(pillar, { skipHistory: true, skipFocus: true });
++                openReference(raw, { skipHistory: true });
++                return;
++            }
++            // Unknown route: fall back to home rather than a blank page.
++            switchView('home', { skipHistory: true, skipFocus: true });
++        }
++
++        window.addEventListener('popstate', restoreFromHash);
++
+         // ============= PROCEDURES DATA =============
+ 
+         const procedures = {
+@@ -4171,7 +4258,8 @@
+         }
+ 
+         let refLastFocused = null;
+-        function openReference(id) {
++        function openReference(id, opts) {
++            opts = opts || {};
+             const data = referenceData[id];
+             if (!data) return;
+             refLastFocused = document.activeElement;
+@@ -4179,7 +4267,7 @@
+ 
+             const tabs = REF_TABS.filter(t => data.sections[t[0]]);
+             document.getElementById('refModalTabs').innerHTML = tabs.map((t, i) =>
+-                '<button class="ref-tab' + (i === 0 ? ' active' : '') + '" data-tab="' + t[0] + '" role="tab">' + t[1] + '</button>').join('');
++                '<button class="ref-tab' + (i === 0 ? ' active' : '') + '" data-tab="' + t[0] + '" role="tab" aria-selected="' + (i === 0 ? 'true' : 'false') + '">' + t[1] + '</button>').join('');
+ 
+             const body = document.getElementById('refModalContent');
+             const paint = k => { body.innerHTML = renderRefSection(k, data.sections[k]) +
+@@ -4189,8 +4277,9 @@
+             document.getElementById('refModalTabs').onclick = e => {
+                 const b = e.target.closest('[data-tab]');
+                 if (!b) return;
+-                document.querySelectorAll('#refModalTabs .ref-tab').forEach(t => t.classList.remove('active'));
++                document.querySelectorAll('#refModalTabs .ref-tab').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
+                 b.classList.add('active');
++                b.setAttribute('aria-selected', 'true');
+                 paint(b.dataset.tab);
+             };
+ 
+@@ -4198,14 +4287,46 @@
+             m.classList.remove('hidden');
+             document.body.style.overflow = 'hidden';
+             m.querySelector('[data-role="close"]').focus();
++
++            if (!opts.skipHistory) navigateHash('#' + id);
+         }
+ 
+-        function closeReference() {
++        function closeReference(opts) {
++            opts = (opts && typeof opts === 'object' && !(opts instanceof Event)) ? opts : {};
+             const m = document.getElementById('refModal');
+             if (!m || m.classList.contains('hidden')) return;
+             m.classList.add('hidden');
+             document.body.style.overflow = '';
+             if (refLastFocused && refLastFocused.focus) refLastFocused.focus();
++            if (!opts.skipHistory) {
++                navigateHash('#' + (sessionStorage.getItem('activeView') || 'home'));
++            }
++        }
++
++        function isRefModalOpen() {
++            const m = document.getElementById('refModal');
++            return !!(m && !m.classList.contains('hidden'));
++        }
++
++        // Modal focus trap: keeps Tab/Shift+Tab cycling within the open dialog instead of
++        // escaping into the page behind it (required for correct modal semantics).
++        function trapModalFocus(e) {
++            if (e.key !== 'Tab' || !isRefModalOpen()) return;
++            const m = document.getElementById('refModal');
++            const focusable = Array.prototype.filter.call(
++                m.querySelectorAll('a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])'),
++                el => el.offsetParent !== null
++            );
++            if (focusable.length === 0) return;
++            const first = focusable[0];
++            const last = focusable[focusable.length - 1];
++            if (e.shiftKey && document.activeElement === first) {
++                e.preventDefault();
++                last.focus();
++            } else if (!e.shiftKey && document.activeElement === last) {
++                e.preventDefault();
++                first.focus();
++            }
+         }
+ 
+         // One delegated listener set handles every deep card, now and future.
+@@ -4215,6 +4336,7 @@
+         });
+         document.addEventListener('keydown', function(e) {
+             if (e.key === 'Escape') { closeReference(); return; }
++            if (e.key === 'Tab') { trapModalFocus(e); return; }
+             if (e.key === 'Enter' || e.key === ' ') {
+                 const card = e.target.closest('[data-ref-id]');
+                 if (card) { e.preventDefault(); openReference(card.dataset.refId); }
+@@ -4222,7 +4344,7 @@
+         });
+         document.addEventListener('DOMContentLoaded', function() {
+             document.querySelectorAll('#refModal [data-role="backdrop"], #refModal [data-role="close"]')
+-                .forEach(el => el.addEventListener('click', closeReference));
++                .forEach(el => el.addEventListener('click', function() { closeReference(); }));
+         });
+         // ============= END DEEP-DIVE REFERENCE SYSTEM =============
+ 
+@@ -4375,83 +4497,59 @@
+         }
+ 
+         // ============= SEARCH FUNCTIONALITY =============
++        // Search index is DERIVED from the single canonical `procedures` object below —
++        // it is not hand-maintained, so titles/categories/counts cannot drift out of sync
++        // with the procedure cards or the reference modals (see buildSearchIndex()).
++
++        const PILLAR_ICONS = { neuro: '🧠', vasc: '🫀', gen: '📋', onc: '🎯' };
++
++        // Non-procedure tools/divisions are not part of `procedures`, so they remain a
++        // small explicit list here — everything clinical comes from `procedures` instead.
++        const TOOLS_INDEX = [
++            { title: 'Device Compatibility Checker', view: 'checker', icon: '✓', category: 'Tools' },
++            { title: 'Materials Specifications Catalog', view: 'kit', icon: '📦', category: 'Tools' },
++            { title: 'Pre-Procedure Checklist', view: 'checklist', icon: '✅', category: 'Tools' },
++            { title: 'Safety & Compliance Information', view: 'safety', icon: '🔒', category: 'Tools' },
++            { title: 'Catheterization Lab Safety', view: 'cathlab-safety', icon: '⚡', category: 'Safety' },
++            { title: 'IR Department Workflow', view: 'ir-workflow', icon: '🔄', category: 'Workflow' }
++        ];
++
++        function buildSearchIndex() {
++            const idx = {};
++            Object.keys(procedures).forEach(pillar => {
++                idx[pillar] = procedures[pillar].map(p => ({
++                    title: p.title,
++                    view: pillar,
++                    icon: PILLAR_ICONS[pillar] || '•',
++                    category: p.category
++                }));
++            });
++            idx.tools = TOOLS_INDEX;
++            return idx;
++        }
+ 
+-        const searchIndex = {
+-            neuro: [
+-                { title: 'Acute Ischemic Stroke Thrombectomy', view: 'neuro', icon: '🧠', category: 'Emergency' },
+-                { title: 'Intracranial Aneurysm Coiling', view: 'neuro', icon: '🧠', category: 'Hemostasis' },
+-                { title: 'Arteriovenous Malformation (AVM) Embolization', view: 'neuro', icon: '🧠', category: 'Malformation' },
+-                { title: 'Dural Arteriovenous Fistula (dAVF) Treatment', view: 'neuro', icon: '🧠', category: 'Malformation' },
+-                { title: 'Cerebral Venous Thrombosis (CVT) Thrombectomy', view: 'neuro', icon: '🧠', category: 'Emergency' },
+-                { title: 'Intracranial Atherosclerotic Disease (ICAD) Stenting', view: 'neuro', icon: '🧠', category: 'Revascularization' },
+-                { title: 'Spinal Arteriovenous Fistula Embolization', view: 'neuro', icon: '🧠', category: 'Malformation' },
+-                { title: 'Ruptured Aneurysm Management & Coiling', view: 'neuro', icon: '🧠', category: 'Emergency' },
+-                { title: 'Carotid Artery Stenting (CAS)', view: 'neuro', icon: '🧠', category: 'Revascularization' }
+-            ],
+-            vasc: [
+-                { title: 'Femoral Artery Access & Closure', view: 'vasc', icon: '🫀', category: 'Vascular Access' },
+-                { title: 'Renal Artery Intervention', view: 'vasc', icon: '🫀', category: 'Revascularization' },
+-                { title: 'Acute Limb Ischemia Thrombectomy', view: 'vasc', icon: '🫀', category: 'Emergency' },
+-                { title: 'Mesenteric Artery Intervention', view: 'vasc', icon: '🫀', category: 'Revascularization' },
+-                { title: 'Subclavian Artery Intervention', view: 'vasc', icon: '🫀', category: 'Revascularization' },
+-                { title: 'TIPS (Transjugular Intrahepatic Portosystemic Shunt)', view: 'vasc', icon: '🫀', category: 'Hemostasis' },
+-                { title: 'Splenic Artery Embolization', view: 'vasc', icon: '🫀', category: 'Hemostasis' },
+-                { title: 'Aortic Endograft Placement', view: 'vasc', icon: '🫀', category: 'Revascularization' },
+-                { title: 'Venous Access & Port Placement', view: 'vasc', icon: '🫀', category: 'Vascular Access' },
+-                { title: 'Peripheral Arterial Disease (PAD) Intervention', view: 'vasc', icon: '🫀', category: 'Revascularization' },
+-                { title: 'Endovascular Aortic Aneurysm Repair (EVAR)', view: 'vasc', icon: '🫀', category: 'Hemostasis' },
+-                { title: 'Deep Venous Thrombosis (DVT) Catheter-Directed Thrombolysis', view: 'vasc', icon: '🫀', category: 'Emergency' },
+-                { title: 'Hemodialysis Access Intervention', view: 'vasc', icon: '🫀', category: 'Vascular Access' },
+-                { title: 'Lower Limb Interventions', view: 'vasc', icon: '🫀', category: 'Revascularization' },
+-                { title: 'Iliac Artery Intervention', view: 'vasc', icon: '🫀', category: 'Revascularization' }
+-            ],
+-            gen: [
+-                { title: 'Percutaneous Nephrostomy Placement', view: 'gen', icon: '📋', category: 'Drainage' },
+-                { title: 'Percutaneous Gastrostomy (PEG)', view: 'gen', icon: '📋', category: 'Access' },
+-                { title: 'Abscess Drainage', view: 'gen', icon: '📋', category: 'Drainage' },
+-                { title: 'Central Venous Access (CVL)', view: 'gen', icon: '📋', category: 'Vascular Access' },
+-                { title: 'Liver Biopsy (Percutaneous)', view: 'gen', icon: '📋', category: 'Biopsy' },
+-                { title: 'Lung Biopsy (CT-Guided)', view: 'gen', icon: '📋', category: 'Biopsy' },
+-                { title: 'Pleural Fluid Drainage', view: 'gen', icon: '📋', category: 'Drainage' },
+-                { title: 'Pancreatic Duct Drainage', view: 'gen', icon: '📋', category: 'Drainage' },
+-                { title: 'Renal Biopsy', view: 'gen', icon: '📋', category: 'Biopsy' },
+-                { title: 'Biliary Interventions', view: 'gen', icon: '📋', category: 'Drainage' },
+-                { title: 'IVC Filter Placement & Retrieval', view: 'gen', icon: '📋', category: 'Vascular Access' },
+-                { title: 'Percutaneous Pericardial Drainage', view: 'gen', icon: '📋', category: 'Drainage' },
+-                { title: 'Percutaneous Jejunostomy Tube Placement', view: 'gen', icon: '📋', category: 'Access' },
+-                { title: 'PICC Line Insertion', view: 'gen', icon: '📋', category: 'Vascular Access' },
+-                { title: 'Temporary Hemodialysis Catheter Insertion', view: 'gen', icon: '📋', category: 'Vascular Access' },
+-                { title: 'Permanent Hemodialysis Catheter Insertion', view: 'gen', icon: '📋', category: 'Vascular Access' }
+-            ],
+-            onc: [
+-                { title: 'Hepatocellular Carcinoma (HCC) TACE', view: 'onc', icon: '🎯', category: 'Tumor Ablation' },
+-                { title: 'Renal Cell Carcinoma (RCC) Ablation', view: 'onc', icon: '🎯', category: 'Tumor Ablation' },
+-                { title: 'Lung Cancer Ablation', view: 'onc', icon: '🎯', category: 'Tumor Ablation' },
+-                { title: 'Bone Metastases Embolization', view: 'onc', icon: '🎯', category: 'Hemostasis' },
+-                { title: 'Portal Vein Embolization (PVE)', view: 'onc', icon: '🎯', category: 'Hemostasis' },
+-                { title: 'Colorectal Liver Metastases Ablation', view: 'onc', icon: '🎯', category: 'Tumor Ablation' },
+-                { title: 'Pancreatic Cancer Ablation', view: 'onc', icon: '🎯', category: 'Tumor Ablation' },
+-                { title: 'Adrenal Metastases Ablation', view: 'onc', icon: '🎯', category: 'Tumor Ablation' },
+-                { title: 'Breast Cancer Ablation', view: 'onc', icon: '🎯', category: 'Tumor Ablation' },
+-                { title: 'Pancreatic Neuroendocrine Tumor Embolization', view: 'onc', icon: '🎯', category: 'Hemostasis/Ablation' },
+-                { title: 'Trans-Arterial Radioembolization (TARE)', view: 'onc', icon: '🎯', category: 'Tumor Ablation' }
+-            ],
+-            tools: [
+-                { title: 'Device Compatibility Checker', view: 'checker', icon: '✓', category: 'Tools' },
+-                { title: 'Materials Specifications Catalog', view: 'kit', icon: '📦', category: 'Tools' },
+-                { title: 'Pre-Procedure Checklist', view: 'checklist', icon: '✅', category: 'Tools' },
+-                { title: 'Safety & Compliance Information', view: 'safety', icon: '🔒', category: 'Tools' },
+-                { title: 'Catheterization Lab Safety', view: 'cathlab-safety', icon: '⚡', category: 'Safety' },
+-                { title: 'IR Department Workflow', view: 'ir-workflow', icon: '🔄', category: 'Workflow' }
+-            ]
+-        };
++        let searchIndex = {};
++        let searchHighlightIndex = -1;
++        let searchLastResults = [];
++
++        function handleSearchKeyup(e) {
++            // Arrow/Enter/Escape are handled in handleSearchKeydown; avoid double-handling here.
++            if (['ArrowDown', 'ArrowUp', 'Enter', 'Escape'].includes(e.key)) return;
++            handleSearch();
++        }
+ 
+         function handleSearch() {
+             const query = document.getElementById('searchInput').value.toLowerCase().trim();
++            const input = document.getElementById('searchInput');
+             const resultsContainer = document.getElementById('searchResults');
+ 
++            searchHighlightIndex = -1;
++
+             if (query.length === 0) {
+                 resultsContainer.classList.remove('active');
++                input.setAttribute('aria-expanded', 'false');
++                input.removeAttribute('aria-activedescendant');
++                searchLastResults = [];
+                 return;
+             }
+ 
+@@ -4460,13 +4558,14 @@
+                 item.title.toLowerCase().includes(query) ||
+                 item.category.toLowerCase().includes(query)
+             );
++            searchLastResults = results;
+ 
+             if (results.length === 0) {
+-                resultsContainer.innerHTML = '<div class="no-results">No procedures found</div>';
++                resultsContainer.innerHTML = '<div class="no-results" role="status">No procedures found</div>';
+             } else {
+                 resultsContainer.innerHTML = results.map((result, idx) => `
+-                    <div class="search-result-item" onclick="selectSearchResult('${result.view}')">
+-                        <span class="result-icon">${result.icon}</span>
++                    <div class="search-result-item" id="search-opt-${idx}" role="option" aria-selected="false" tabindex="-1" onclick="selectSearchResult('${result.view}')">
++                        <span class="result-icon" aria-hidden="true">${result.icon}</span>
+                         <div class="result-content">
+                             <div class="result-title">${sanitizeHTML(result.title)}</div>
+                             <div class="result-category">${sanitizeHTML(result.category)}</div>
+@@ -4476,6 +4575,50 @@
+             }
+ 
+             resultsContainer.classList.add('active');
++            input.setAttribute('aria-expanded', 'true');
++        }
++
++        function updateSearchHighlight() {
++            const items = document.querySelectorAll('#searchResults .search-result-item');
++            const input = document.getElementById('searchInput');
++            items.forEach((el, i) => {
++                const active = i === searchHighlightIndex;
++                el.classList.toggle('highlighted', active);
++                el.setAttribute('aria-selected', active ? 'true' : 'false');
++                if (active) el.scrollIntoView({ block: 'nearest' });
++            });
++            if (searchHighlightIndex >= 0 && items[searchHighlightIndex]) {
++                input.setAttribute('aria-activedescendant', items[searchHighlightIndex].id);
++            } else {
++                input.removeAttribute('aria-activedescendant');
++            }
++        }
++
++        function handleSearchKeydown(e) {
++            const resultsContainer = document.getElementById('searchResults');
++            const isOpen = resultsContainer.classList.contains('active');
++
++            if (e.key === 'Escape') {
++                resultsContainer.classList.remove('active');
++                document.getElementById('searchInput').setAttribute('aria-expanded', 'false');
++                return;
++            }
++            if (!isOpen || searchLastResults.length === 0) return;
++
++            if (e.key === 'ArrowDown') {
++                e.preventDefault();
++                searchHighlightIndex = (searchHighlightIndex + 1) % searchLastResults.length;
++                updateSearchHighlight();
++            } else if (e.key === 'ArrowUp') {
++                e.preventDefault();
++                searchHighlightIndex = (searchHighlightIndex - 1 + searchLastResults.length) % searchLastResults.length;
++                updateSearchHighlight();
++            } else if (e.key === 'Enter') {
++                if (searchHighlightIndex >= 0 && searchLastResults[searchHighlightIndex]) {
++                    e.preventDefault();
++                    selectSearchResult(searchLastResults[searchHighlightIndex].view);
++                }
++            }
+         }
+ 
+         function showSearchResults() {
+@@ -4486,9 +4629,14 @@
+         }
+ 
+         function selectSearchResult(viewName) {
+-            document.getElementById('searchInput').value = '';
++            const input = document.getElementById('searchInput');
++            input.value = '';
++            input.setAttribute('aria-expanded', 'false');
++            input.removeAttribute('aria-activedescendant');
+             document.getElementById('searchResults').classList.remove('active');
+-            switchView(viewName);
++            searchHighlightIndex = -1;
++            searchLastResults = [];
++            navigateTo(viewName);
+         }
+ 
+         // Close search when clicking outside
+@@ -4496,12 +4644,41 @@
+             const searchContainer = document.querySelector('.search-container');
+             if (searchContainer && !searchContainer.contains(event.target)) {
+                 document.getElementById('searchResults').classList.remove('active');
++                document.getElementById('searchInput').setAttribute('aria-expanded', 'false');
+             }
+         });
+ 
+         // ============= INITIALIZATION =============
+ 
++        let __initDone = false;
+         function init() {
++            if (__initDone) return; // guards against double-firing (DOMContentLoaded + load)
++            __initDone = true;
++
++            // Build the search index from the single canonical `procedures` object —
++            // titles/categories/counts in search can no longer drift from the cards.
++            searchIndex = buildSearchIndex();
++
++            // Populate home-page specialty counts from the same canonical source.
++            document.querySelectorAll('[data-pillar-count]').forEach(el => {
++                const pillar = el.getAttribute('data-pillar-count');
++                const count = (procedures[pillar] || []).length;
++                el.textContent = count + (count === 1 ? ' Procedure' : ' Procedures');
++            });
++
++            // Lightweight automated data-integrity check (visible in the console): every
++            // procedure should have a matching reference entry, and vice versa, with no
++            // duplicate IDs. This is a quality gate, not a UI-facing feature.
++            (function checkDataIntegrity() {
++                const allIds = Object.values(procedures).flat().map(p => p.id);
++                const dupes = allIds.filter((id, i) => allIds.indexOf(id) !== i);
++                if (dupes.length) console.error('[Data integrity] Duplicate procedure IDs:', dupes);
++                const missingRef = allIds.filter(id => !referenceData[id]);
++                const orphanRef = Object.keys(referenceData).filter(id => !allIds.includes(id));
++                if (missingRef.length) console.warn('[Data integrity] Procedures with no reference entry:', missingRef);
++                if (orphanRef.length) console.warn('[Data integrity] Reference entries with no matching procedure:', orphanRef);
++            })();
++
+             // Initialize theme
+             initTheme();
+ 
+@@ -4510,10 +4687,13 @@
+                 renderProcedures(pillar);
+             });
+ 
+-            // Restore saved view
+-            const savedView = sessionStorage.getItem('activeView') || 'home';
+-            if (isValidView(savedView)) {
+-                switchView(savedView);
++            // Restore active section/procedure from the URL if present (shareable/bookmarkable
++            // deep link), otherwise fall back to this tab's last-used view, otherwise home.
++            if (location.hash) {
++                restoreFromHash();
++            } else {
++                const savedView = sessionStorage.getItem('activeView') || 'home';
++                switchView(isValidView(savedView) ? savedView : 'home', { skipHistory: true, skipFocus: true });
+             }
+         }
+ 
+-- 
+2.43.0
+

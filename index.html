@@ -67,6 +67,25 @@
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        .visually-hidden {
+            position: absolute;
+            width: 1px; height: 1px;
+            padding: 0; margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.001ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.001ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
         body {
             background: var(--bg-primary);
             color: var(--text-primary);
@@ -325,11 +344,27 @@
             transition: all 0.3s;
             border: 2px solid transparent;
             color: #000000;
+            /* Reset native <button> defaults so it still looks like a card */
+            display: block;
+            width: 100%;
+            text-align: left;
+            font: inherit;
+            appearance: none;
+            -webkit-appearance: none;
         }
 
         .pillar-card:hover {
             transform: translateY(-4px);
             box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .pillar-card:focus-visible,
+        .procedure-item:focus-visible,
+        .search-result-item:focus-visible,
+        .nav-btn:focus-visible,
+        .theme-toggle:focus-visible {
+            outline: 3px solid #1976D2;
+            outline-offset: 2px;
         }
 
         .pillar-card.neuro {
@@ -812,7 +847,8 @@
             gap: 10px;
         }
 
-        .search-result-item:hover {
+        .search-result-item:hover,
+        .search-result-item.highlighted {
             background: var(--bg-secondary);
             padding-left: 16px;
         }
@@ -929,20 +965,27 @@
     <!-- Search Container -->
     <div class="search-container">
         <div class="search-box">
-            <span class="search-icon">🔍</span>
+            <span class="search-icon" aria-hidden="true">🔍</span>
+            <label for="searchInput" class="visually-hidden">Search procedures and devices</label>
             <input
                 type="text"
                 id="searchInput"
                 placeholder="Search procedures, devices..."
-                onkeyup="handleSearch()"
+                role="combobox"
+                aria-expanded="false"
+                aria-controls="searchResults"
+                aria-autocomplete="list"
+                autocomplete="off"
+                onkeyup="handleSearchKeyup(event)"
+                onkeydown="handleSearchKeydown(event)"
                 onfocus="showSearchResults()"
             >
-            <div class="search-results" id="searchResults"></div>
+            <div class="search-results" id="searchResults" role="listbox" aria-label="Search results"></div>
         </div>
     </div>
 
     <!-- Safety Banner -->
-    <div class="container">
+    <main class="container">
         <div class="safety-banner">
             ⚠️ IMPORTANT: This application is educational software only and NOT a medical device. Always follow institutional protocols and manufacturer instructions.
         </div>
@@ -970,26 +1013,26 @@
             </div>
 
             <div class="pillar-grid">
-                <div class="pillar-card neuro" onclick="switchView('neuro')">
+                <button type="button" class="pillar-card neuro" onclick="switchView('neuro')">
                     <h3>🧠 Neuro IR</h3>
                     <p>Neurointervention procedures including stroke treatment, aneurysm management, and AVM embolization.</p>
-                    <div class="count">9 Procedures</div>
-                </div>
-                <div class="pillar-card vasc" onclick="switchView('vasc')">
+                    <div class="count" data-pillar-count="neuro"></div>
+                </button>
+                <button type="button" class="pillar-card vasc" onclick="switchView('vasc')">
                     <h3>🫀 Vascular IR</h3>
                     <p>Vascular access, interventions, and complex vascular procedures.</p>
-                    <div class="count">9 Procedures</div>
-                </div>
-                <div class="pillar-card gen" onclick="switchView('gen')">
+                    <div class="count" data-pillar-count="vasc"></div>
+                </button>
+                <button type="button" class="pillar-card gen" onclick="switchView('gen')">
                     <h3>📋 General IR</h3>
                     <p>Percutaneous interventions including drains, biopsies, and access procedures.</p>
-                    <div class="count">9 Procedures</div>
-                </div>
-                <div class="pillar-card onc" onclick="switchView('onc')">
+                    <div class="count" data-pillar-count="gen"></div>
+                </button>
+                <button type="button" class="pillar-card onc" onclick="switchView('onc')">
                     <h3>🎯 Oncology IR</h3>
                     <p>Tumor-focused interventions including ablation, TACE, and embolization.</p>
-                    <div class="count">9 Procedures</div>
-                </div>
+                    <div class="count" data-pillar-count="onc"></div>
+                </button>
             </div>
 
             <div class="disclaimer-box">
@@ -1142,9 +1185,8 @@
                 <div class="section">
                     <h4>⚖️ Legal Classification & Regulatory Status</h4>
                     <div class="disclaimer-box">
-                        <p><strong>FDA Classification:</strong> This application is classified as <strong>educational software</strong>, NOT a medical device per FDA 21 CFR 860.3(c).</p>
-                        <p><strong>International Status:</strong> EU (educational software), Canada (non-medical), Australia (ARTG non-exempt), Japan (informational tool) - all classify as educational software requiring NO special regulatory approval.</p>
-                        <p><strong>Intent:</strong> This application is designed for training and education of healthcare professionals and medical students. It does NOT provide real-time clinical guidance, certification, or act as a clinical decision support system.</p>
+                        <p><strong>Intent:</strong> This application is designed as static educational/reference material for training and education of healthcare professionals and medical students. It does NOT provide real-time clinical guidance, patient-specific recommendations, certification, or act as a clinical decision support system, and it makes no automated calculations that direct patient care.</p>
+                        <p><strong>Regulatory status:</strong> No formal determination of medical device status (FDA, EU MDR, or other jurisdictions) has been made for this application. The specific classification citations previously shown on this page were not verified and have been removed. Before relying on any regulatory classification claim for this software, obtain a formal assessment from qualified regulatory/legal counsel in each jurisdiction where it will be used.</p>
                     </div>
                 </div>
 
@@ -1189,20 +1231,18 @@
                 <div class="section">
                     <h4>📋 Content Governance & Medical Review</h4>
                     <div class="disclaimer-box">
-                        <p><strong>Content Review Process:</strong></p>
+                        <p><strong>Current Review Status:</strong></p>
                         <ul>
-                            <li>All clinical content reviewed by minimum 2 board-certified Interventional Radiologists (ABIR certified, 5+ years active practice)</li>
-                            <li>Verified against current ACR, CIRSE, SIR guidelines and standards</li>
-                            <li>Clinical validation against institutional protocols</li>
-                            <li>Quarterly content review cycle to maintain accuracy</li>
-                            <li>Annual alignment check with published clinical guidelines</li>
-                            <li>Error reporting mechanism: <strong>shadirawa@gmail.com</strong></li>
+                            <li><strong>This content has NOT yet completed formal clinical review</strong> by a credentialed, board-certified Interventional Radiologist, nursing/technologist representative, pharmacist, or medical physicist.</li>
+                            <li>Procedure descriptions, device specifications, and protocol steps were drafted with AI assistance and are provided for general educational orientation only, pending independent expert verification.</li>
+                            <li>Do NOT treat any figure, dose, threshold, device dimension, or compatibility statement in this application as verified until it carries a named reviewer and review date.</li>
+                            <li>Error/inaccuracy reporting: <strong>shadirawa@gmail.com</strong></li>
                         </ul>
                         <p><strong>Known Limitations:</strong></p>
                         <ul>
                             <li>Device compatibility checker validates geometry only (user responsible for full IFU compliance)</li>
                             <li>Anatomical diagrams are schematic, not patient-specific</li>
-                            <li>Offline content requires periodic updates for new devices/techniques</li>
+                            <li>Static content requires periodic updates for new devices/techniques and changed guidelines</li>
                             <li>Does NOT account for patient-specific contraindications</li>
                         </ul>
                     </div>
@@ -1213,38 +1253,23 @@
                     <div class="disclaimer-box">
                         <p><strong>Data Collection:</strong></p>
                         <ul>
-                            <li>Module opens and usage time (aggregated only)</li>
-                            <li>Device type and OS version (for compatibility tracking)</li>
-                            <li>Crash reports (sent to development team for debugging)</li>
-                            <li>NO personal identifiers, location, or health data collected</li>
+                            <li>This application is a single, self-contained static file. It makes no network requests, runs no analytics or tracking scripts, and has no backend server.</li>
+                            <li>No usage data, device information, crash reports, or any other data is collected, transmitted, or stored outside your own browser.</li>
+                            <li>The only data saved is your theme preference and current tab, stored locally in your browser (localStorage/sessionStorage) and never sent anywhere.</li>
                         </ul>
                         <p><strong>Privacy Compliance:</strong></p>
                         <ul>
-                            <li>GDPR compliant (EU users)</li>
-                            <li>CCPA compliant (California users)</li>
-                            <li>HIPAA NOT applicable (no PHI/protected health information)</li>
-                            <li>All data encrypted in transit (TLS 1.2+)</li>
+                            <li>Because no personal data is collected or processed, GDPR/CCPA data-subject obligations generally do not attach to this application's own operation — this is a statement about this app's data flows, not general legal advice.</li>
+                            <li>HIPAA does not apply: no PHI is collected, stored, or transmitted.</li>
                         </ul>
-                        <p><strong>User Rights:</strong></p>
-                        <ul>
-                            <li>Right to access your data</li>
-                            <li>Right to delete your data</li>
-                            <li>Right to opt-out of analytics</li>
-                            <li>Request data deletion: <strong>shadirawa@gmail.com</strong></li>
-                        </ul>
+                        <p><strong>Questions:</strong> <strong>shadirawa@gmail.com</strong></p>
                     </div>
                 </div>
 
                 <div class="section">
                     <h4>📞 Support & Error Reporting</h4>
                     <div class="disclaimer-box">
-                        <p><strong>Report Issues To:</strong> <strong>shadirawa@gmail.com</strong></p>
-                        <p><strong>Response Times:</strong></p>
-                        <ul>
-                            <li>Critical errors (app crash, data loss): 48 hours</li>
-                            <li>Moderate issues (feature malfunction): 2 weeks</li>
-                            <li>Minor issues (UI/UX): included in next version</li>
-                        </ul>
+                        <p><strong>Report Issues To:</strong> <strong>shadirawa@gmail.com</strong> or by opening an issue on the project's GitHub repository. This is currently maintained without a guaranteed service-level response time; critical clinical-content errors are the highest priority.</p>
                         <p><strong>Information to Include:</strong></p>
                         <ul>
                             <li>Device type and OS version</li>
@@ -1256,11 +1281,9 @@
                 </div>
 
                 <div class="section">
-                    <h4>✅ Age Requirement Acknowledgment</h4>
+                    <h4>✅ Intended Audience</h4>
                     <div class="disclaimer-box">
-                        <p><strong>Minimum Age: 18 years</strong></p>
-                        <p>This application is restricted to individuals 18 years of age or older due to the professional medical nature of the content. By using this application, you acknowledge that you are 18+ years old and a healthcare professional or medical student.</p>
-                        <p><strong>Age Verification:</strong> You confirmed your age at application startup. False age certification may violate applicable laws.</p>
+                        <p><strong>Intended for adult (18+) healthcare professionals and medical/nursing students.</strong> This application does not implement an automated age or credential verification step — it relies on the intended-use restriction stated here and in the header disclaimer, not on a technical gate. If you require enforced age/credential verification for your deployment, that must be added and reviewed separately before public release.</p>
                     </div>
                 </div>
             </div>
@@ -1560,7 +1583,7 @@
                             <li><strong>Sedatives:</strong> Have reversal agents available (flumazenil for benzodiazepines, naloxone for opioids). Titrate to effect; monitor continuously during administration.</li>
                             <li><strong>Anticoagulation:</strong> Heparin dosing based on weight/ACT (activated clotting time). Protamine available for reversal. Monitor ACT every 30-60 minutes during case.</li>
                             <li><strong>Vasodilators:</strong> Nitroglycerin, verapamil for vasospasm; have vasopressor (phenylephrine, dopamine) for hypotension. Know appropriate doses and contraindications.</li>
-                            <li><strong>Emergency Medications:</strong> Epinephrine (0.1-0.5 mg IV/IO), atropine (0.5-1 mg), amiodarone (300 mg IV), lidocaine (100 mg) for ACLS protocols immediately accessible.</li>
+                            <li><strong>Emergency Medications:</strong> Epinephrine, atropine, amiodarone, and lidocaine for ACLS protocols must be immediately accessible. <em>Specific doses are intentionally omitted here — follow your institution's current ACLS algorithm and pharmacy-verified dosing, not this app, for any emergency drug administration.</em></li>
                             <li><strong>Adverse Reactions:</strong> Have protocol for contrast reaction (mild/moderate/severe). Steroids, antihistamines, epinephrine ready. Observe all patients post-procedure.</li>
                             <li><strong>Storage & Expiration:</strong> Store medications at correct temperature. Check expiration dates; discard expired medications immediately. Organize crash cart medications clearly.</li>
                             <li><strong>Documentation:</strong> Record all medications administered, times, doses, patient response. Include any adverse reactions or complications.</li>
@@ -1670,7 +1693,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </main>
 
     <!-- Theme Toggle Button -->
     <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark/light theme" title="Toggle Theme">☀️</button>
@@ -1685,6 +1708,9 @@
         </div>
         <p style="margin-top: 20px; font-size: 12px; color: var(--text-secondary);">
             ⚠️ This application is educational software only. Not a medical device. Follow institutional protocols and manufacturer IFU.
+        </p>
+        <p style="margin-top: 8px; font-size: 11px; color: var(--text-secondary);">
+            Version 1.1.0 — clinical content pending formal review. See <a href="#" onclick="switchView('safety'); return false;" style="color: inherit;">Safety &amp; Compliance</a> and <a href="https://github.com/shadirawa-ship-it/ir-academy-pro/blob/main/CHANGELOG.md" target="_blank" rel="noopener" style="color: inherit;">changelog</a>.
         </p>
     </footer>
 
@@ -1743,7 +1769,13 @@
 
         // ============= NAVIGATION =============
 
-        function switchView(viewName) {
+        // `switchView` is the single entry point used by every onclick/keyboard handler in
+        // the page. It renders the view AND keeps the URL in sync (so a section can be
+        // bookmarked, shared, or restored on reload/back-forward) unless the caller is
+        // itself responding to a URL change (opts.skipHistory), in which case it only renders.
+        function switchView(viewName, opts) {
+            opts = opts || {};
+
             // Security validation
             if (!isValidView(viewName)) {
                 console.error('Invalid view name');
@@ -1761,13 +1793,68 @@
 
             // Update button states — highlight this view's nav button deterministically
             // (works for both click and programmatic calls; no reliance on global event)
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.getAttribute('role') === 'tab') btn.setAttribute('aria-selected', 'false');
+            });
             const navBtn = document.querySelector('.nav-btn[onclick*="\'' + viewName + '\'"]');
-            if (navBtn) navBtn.classList.add('active');
+            if (navBtn) {
+                navBtn.classList.add('active');
+                if (navBtn.getAttribute('role') === 'tab') navBtn.setAttribute('aria-selected', 'true');
+            }
 
-            // Save active view
+            // Save active view (kept as a same-tab fallback; the URL hash is now the primary,
+            // shareable record of navigation state — see navigateHash()/restoreFromHash())
             sessionStorage.setItem('activeView', viewName);
+
+            if (!opts.skipHistory) {
+                navigateHash('#' + viewName);
+            }
+
+            // Move focus to the new view's heading for keyboard/screen-reader users, so
+            // focus doesn't silently stay on a now-hidden control.
+            if (!opts.skipFocus && view) {
+                const heading = view.querySelector('h2, h3');
+                if (heading) {
+                    heading.setAttribute('tabindex', '-1');
+                    heading.focus({ preventScroll: false });
+                }
+            }
         }
+
+        // ============= URL ROUTING =============
+        // Sections (#home, #neuro, ...) and individual procedures (#onc-11) are both
+        // addressable, so a link can restore or share the exact active section/procedure.
+
+        function navigateHash(hash) {
+            if (location.hash !== hash) {
+                history.pushState({ hash: hash }, '', hash);
+            }
+        }
+
+        function restoreFromHash() {
+            const raw = (location.hash || '').replace(/^#/, '');
+
+            if (!raw) {
+                switchView('home', { skipHistory: true, skipFocus: true });
+                return;
+            }
+            if (isValidView(raw)) {
+                switchView(raw, { skipHistory: true, skipFocus: true });
+                return;
+            }
+            // Is this a procedure id (e.g. "onc-11")? Switch to its pillar, then open it.
+            if (typeof referenceData !== 'undefined' && referenceData[raw]) {
+                const pillar = Object.keys(procedures).find(p => procedures[p].some(pr => pr.id === raw));
+                if (pillar) switchView(pillar, { skipHistory: true, skipFocus: true });
+                openReference(raw, { skipHistory: true });
+                return;
+            }
+            // Unknown route: fall back to home rather than a blank page.
+            switchView('home', { skipHistory: true, skipFocus: true });
+        }
+
+        window.addEventListener('popstate', restoreFromHash);
 
         // ============= PROCEDURES DATA =============
 
@@ -4171,7 +4258,8 @@
         }
 
         let refLastFocused = null;
-        function openReference(id) {
+        function openReference(id, opts) {
+            opts = opts || {};
             const data = referenceData[id];
             if (!data) return;
             refLastFocused = document.activeElement;
@@ -4179,7 +4267,7 @@
 
             const tabs = REF_TABS.filter(t => data.sections[t[0]]);
             document.getElementById('refModalTabs').innerHTML = tabs.map((t, i) =>
-                '<button class="ref-tab' + (i === 0 ? ' active' : '') + '" data-tab="' + t[0] + '" role="tab">' + t[1] + '</button>').join('');
+                '<button class="ref-tab' + (i === 0 ? ' active' : '') + '" data-tab="' + t[0] + '" role="tab" aria-selected="' + (i === 0 ? 'true' : 'false') + '">' + t[1] + '</button>').join('');
 
             const body = document.getElementById('refModalContent');
             const paint = k => { body.innerHTML = renderRefSection(k, data.sections[k]) +
@@ -4189,8 +4277,9 @@
             document.getElementById('refModalTabs').onclick = e => {
                 const b = e.target.closest('[data-tab]');
                 if (!b) return;
-                document.querySelectorAll('#refModalTabs .ref-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('#refModalTabs .ref-tab').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
                 b.classList.add('active');
+                b.setAttribute('aria-selected', 'true');
                 paint(b.dataset.tab);
             };
 
@@ -4198,14 +4287,46 @@
             m.classList.remove('hidden');
             document.body.style.overflow = 'hidden';
             m.querySelector('[data-role="close"]').focus();
+
+            if (!opts.skipHistory) navigateHash('#' + id);
         }
 
-        function closeReference() {
+        function closeReference(opts) {
+            opts = (opts && typeof opts === 'object' && !(opts instanceof Event)) ? opts : {};
             const m = document.getElementById('refModal');
             if (!m || m.classList.contains('hidden')) return;
             m.classList.add('hidden');
             document.body.style.overflow = '';
             if (refLastFocused && refLastFocused.focus) refLastFocused.focus();
+            if (!opts.skipHistory) {
+                navigateHash('#' + (sessionStorage.getItem('activeView') || 'home'));
+            }
+        }
+
+        function isRefModalOpen() {
+            const m = document.getElementById('refModal');
+            return !!(m && !m.classList.contains('hidden'));
+        }
+
+        // Modal focus trap: keeps Tab/Shift+Tab cycling within the open dialog instead of
+        // escaping into the page behind it (required for correct modal semantics).
+        function trapModalFocus(e) {
+            if (e.key !== 'Tab' || !isRefModalOpen()) return;
+            const m = document.getElementById('refModal');
+            const focusable = Array.prototype.filter.call(
+                m.querySelectorAll('a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])'),
+                el => el.offsetParent !== null
+            );
+            if (focusable.length === 0) return;
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (e.shiftKey && document.activeElement === first) {
+                e.preventDefault();
+                last.focus();
+            } else if (!e.shiftKey && document.activeElement === last) {
+                e.preventDefault();
+                first.focus();
+            }
         }
 
         // One delegated listener set handles every deep card, now and future.
@@ -4215,6 +4336,7 @@
         });
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') { closeReference(); return; }
+            if (e.key === 'Tab') { trapModalFocus(e); return; }
             if (e.key === 'Enter' || e.key === ' ') {
                 const card = e.target.closest('[data-ref-id]');
                 if (card) { e.preventDefault(); openReference(card.dataset.refId); }
@@ -4222,7 +4344,7 @@
         });
         document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('#refModal [data-role="backdrop"], #refModal [data-role="close"]')
-                .forEach(el => el.addEventListener('click', closeReference));
+                .forEach(el => el.addEventListener('click', function() { closeReference(); }));
         });
         // ============= END DEEP-DIVE REFERENCE SYSTEM =============
 
@@ -4375,83 +4497,59 @@
         }
 
         // ============= SEARCH FUNCTIONALITY =============
+        // Search index is DERIVED from the single canonical `procedures` object below —
+        // it is not hand-maintained, so titles/categories/counts cannot drift out of sync
+        // with the procedure cards or the reference modals (see buildSearchIndex()).
 
-        const searchIndex = {
-            neuro: [
-                { title: 'Acute Ischemic Stroke Thrombectomy', view: 'neuro', icon: '🧠', category: 'Emergency' },
-                { title: 'Intracranial Aneurysm Coiling', view: 'neuro', icon: '🧠', category: 'Hemostasis' },
-                { title: 'Arteriovenous Malformation (AVM) Embolization', view: 'neuro', icon: '🧠', category: 'Malformation' },
-                { title: 'Dural Arteriovenous Fistula (dAVF) Treatment', view: 'neuro', icon: '🧠', category: 'Malformation' },
-                { title: 'Cerebral Venous Thrombosis (CVT) Thrombectomy', view: 'neuro', icon: '🧠', category: 'Emergency' },
-                { title: 'Intracranial Atherosclerotic Disease (ICAD) Stenting', view: 'neuro', icon: '🧠', category: 'Revascularization' },
-                { title: 'Spinal Arteriovenous Fistula Embolization', view: 'neuro', icon: '🧠', category: 'Malformation' },
-                { title: 'Ruptured Aneurysm Management & Coiling', view: 'neuro', icon: '🧠', category: 'Emergency' },
-                { title: 'Carotid Artery Stenting (CAS)', view: 'neuro', icon: '🧠', category: 'Revascularization' }
-            ],
-            vasc: [
-                { title: 'Femoral Artery Access & Closure', view: 'vasc', icon: '🫀', category: 'Vascular Access' },
-                { title: 'Renal Artery Intervention', view: 'vasc', icon: '🫀', category: 'Revascularization' },
-                { title: 'Acute Limb Ischemia Thrombectomy', view: 'vasc', icon: '🫀', category: 'Emergency' },
-                { title: 'Mesenteric Artery Intervention', view: 'vasc', icon: '🫀', category: 'Revascularization' },
-                { title: 'Subclavian Artery Intervention', view: 'vasc', icon: '🫀', category: 'Revascularization' },
-                { title: 'TIPS (Transjugular Intrahepatic Portosystemic Shunt)', view: 'vasc', icon: '🫀', category: 'Hemostasis' },
-                { title: 'Splenic Artery Embolization', view: 'vasc', icon: '🫀', category: 'Hemostasis' },
-                { title: 'Aortic Endograft Placement', view: 'vasc', icon: '🫀', category: 'Revascularization' },
-                { title: 'Venous Access & Port Placement', view: 'vasc', icon: '🫀', category: 'Vascular Access' },
-                { title: 'Peripheral Arterial Disease (PAD) Intervention', view: 'vasc', icon: '🫀', category: 'Revascularization' },
-                { title: 'Endovascular Aortic Aneurysm Repair (EVAR)', view: 'vasc', icon: '🫀', category: 'Hemostasis' },
-                { title: 'Deep Venous Thrombosis (DVT) Catheter-Directed Thrombolysis', view: 'vasc', icon: '🫀', category: 'Emergency' },
-                { title: 'Hemodialysis Access Intervention', view: 'vasc', icon: '🫀', category: 'Vascular Access' },
-                { title: 'Lower Limb Interventions', view: 'vasc', icon: '🫀', category: 'Revascularization' },
-                { title: 'Iliac Artery Intervention', view: 'vasc', icon: '🫀', category: 'Revascularization' }
-            ],
-            gen: [
-                { title: 'Percutaneous Nephrostomy Placement', view: 'gen', icon: '📋', category: 'Drainage' },
-                { title: 'Percutaneous Gastrostomy (PEG)', view: 'gen', icon: '📋', category: 'Access' },
-                { title: 'Abscess Drainage', view: 'gen', icon: '📋', category: 'Drainage' },
-                { title: 'Central Venous Access (CVL)', view: 'gen', icon: '📋', category: 'Vascular Access' },
-                { title: 'Liver Biopsy (Percutaneous)', view: 'gen', icon: '📋', category: 'Biopsy' },
-                { title: 'Lung Biopsy (CT-Guided)', view: 'gen', icon: '📋', category: 'Biopsy' },
-                { title: 'Pleural Fluid Drainage', view: 'gen', icon: '📋', category: 'Drainage' },
-                { title: 'Pancreatic Duct Drainage', view: 'gen', icon: '📋', category: 'Drainage' },
-                { title: 'Renal Biopsy', view: 'gen', icon: '📋', category: 'Biopsy' },
-                { title: 'Biliary Interventions', view: 'gen', icon: '📋', category: 'Drainage' },
-                { title: 'IVC Filter Placement & Retrieval', view: 'gen', icon: '📋', category: 'Vascular Access' },
-                { title: 'Percutaneous Pericardial Drainage', view: 'gen', icon: '📋', category: 'Drainage' },
-                { title: 'Percutaneous Jejunostomy Tube Placement', view: 'gen', icon: '📋', category: 'Access' },
-                { title: 'PICC Line Insertion', view: 'gen', icon: '📋', category: 'Vascular Access' },
-                { title: 'Temporary Hemodialysis Catheter Insertion', view: 'gen', icon: '📋', category: 'Vascular Access' },
-                { title: 'Permanent Hemodialysis Catheter Insertion', view: 'gen', icon: '📋', category: 'Vascular Access' }
-            ],
-            onc: [
-                { title: 'Hepatocellular Carcinoma (HCC) TACE', view: 'onc', icon: '🎯', category: 'Tumor Ablation' },
-                { title: 'Renal Cell Carcinoma (RCC) Ablation', view: 'onc', icon: '🎯', category: 'Tumor Ablation' },
-                { title: 'Lung Cancer Ablation', view: 'onc', icon: '🎯', category: 'Tumor Ablation' },
-                { title: 'Bone Metastases Embolization', view: 'onc', icon: '🎯', category: 'Hemostasis' },
-                { title: 'Portal Vein Embolization (PVE)', view: 'onc', icon: '🎯', category: 'Hemostasis' },
-                { title: 'Colorectal Liver Metastases Ablation', view: 'onc', icon: '🎯', category: 'Tumor Ablation' },
-                { title: 'Pancreatic Cancer Ablation', view: 'onc', icon: '🎯', category: 'Tumor Ablation' },
-                { title: 'Adrenal Metastases Ablation', view: 'onc', icon: '🎯', category: 'Tumor Ablation' },
-                { title: 'Breast Cancer Ablation', view: 'onc', icon: '🎯', category: 'Tumor Ablation' },
-                { title: 'Pancreatic Neuroendocrine Tumor Embolization', view: 'onc', icon: '🎯', category: 'Hemostasis/Ablation' },
-                { title: 'Trans-Arterial Radioembolization (TARE)', view: 'onc', icon: '🎯', category: 'Tumor Ablation' }
-            ],
-            tools: [
-                { title: 'Device Compatibility Checker', view: 'checker', icon: '✓', category: 'Tools' },
-                { title: 'Materials Specifications Catalog', view: 'kit', icon: '📦', category: 'Tools' },
-                { title: 'Pre-Procedure Checklist', view: 'checklist', icon: '✅', category: 'Tools' },
-                { title: 'Safety & Compliance Information', view: 'safety', icon: '🔒', category: 'Tools' },
-                { title: 'Catheterization Lab Safety', view: 'cathlab-safety', icon: '⚡', category: 'Safety' },
-                { title: 'IR Department Workflow', view: 'ir-workflow', icon: '🔄', category: 'Workflow' }
-            ]
-        };
+        const PILLAR_ICONS = { neuro: '🧠', vasc: '🫀', gen: '📋', onc: '🎯' };
+
+        // Non-procedure tools/divisions are not part of `procedures`, so they remain a
+        // small explicit list here — everything clinical comes from `procedures` instead.
+        const TOOLS_INDEX = [
+            { title: 'Device Compatibility Checker', view: 'checker', icon: '✓', category: 'Tools' },
+            { title: 'Materials Specifications Catalog', view: 'kit', icon: '📦', category: 'Tools' },
+            { title: 'Pre-Procedure Checklist', view: 'checklist', icon: '✅', category: 'Tools' },
+            { title: 'Safety & Compliance Information', view: 'safety', icon: '🔒', category: 'Tools' },
+            { title: 'Catheterization Lab Safety', view: 'cathlab-safety', icon: '⚡', category: 'Safety' },
+            { title: 'IR Department Workflow', view: 'ir-workflow', icon: '🔄', category: 'Workflow' }
+        ];
+
+        function buildSearchIndex() {
+            const idx = {};
+            Object.keys(procedures).forEach(pillar => {
+                idx[pillar] = procedures[pillar].map(p => ({
+                    title: p.title,
+                    view: pillar,
+                    icon: PILLAR_ICONS[pillar] || '•',
+                    category: p.category
+                }));
+            });
+            idx.tools = TOOLS_INDEX;
+            return idx;
+        }
+
+        let searchIndex = {};
+        let searchHighlightIndex = -1;
+        let searchLastResults = [];
+
+        function handleSearchKeyup(e) {
+            // Arrow/Enter/Escape are handled in handleSearchKeydown; avoid double-handling here.
+            if (['ArrowDown', 'ArrowUp', 'Enter', 'Escape'].includes(e.key)) return;
+            handleSearch();
+        }
 
         function handleSearch() {
             const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            const input = document.getElementById('searchInput');
             const resultsContainer = document.getElementById('searchResults');
+
+            searchHighlightIndex = -1;
 
             if (query.length === 0) {
                 resultsContainer.classList.remove('active');
+                input.setAttribute('aria-expanded', 'false');
+                input.removeAttribute('aria-activedescendant');
+                searchLastResults = [];
                 return;
             }
 
@@ -4460,13 +4558,14 @@
                 item.title.toLowerCase().includes(query) ||
                 item.category.toLowerCase().includes(query)
             );
+            searchLastResults = results;
 
             if (results.length === 0) {
-                resultsContainer.innerHTML = '<div class="no-results">No procedures found</div>';
+                resultsContainer.innerHTML = '<div class="no-results" role="status">No procedures found</div>';
             } else {
                 resultsContainer.innerHTML = results.map((result, idx) => `
-                    <div class="search-result-item" onclick="selectSearchResult('${result.view}')">
-                        <span class="result-icon">${result.icon}</span>
+                    <div class="search-result-item" id="search-opt-${idx}" role="option" aria-selected="false" tabindex="-1" onclick="selectSearchResult('${result.view}')">
+                        <span class="result-icon" aria-hidden="true">${result.icon}</span>
                         <div class="result-content">
                             <div class="result-title">${sanitizeHTML(result.title)}</div>
                             <div class="result-category">${sanitizeHTML(result.category)}</div>
@@ -4476,6 +4575,50 @@
             }
 
             resultsContainer.classList.add('active');
+            input.setAttribute('aria-expanded', 'true');
+        }
+
+        function updateSearchHighlight() {
+            const items = document.querySelectorAll('#searchResults .search-result-item');
+            const input = document.getElementById('searchInput');
+            items.forEach((el, i) => {
+                const active = i === searchHighlightIndex;
+                el.classList.toggle('highlighted', active);
+                el.setAttribute('aria-selected', active ? 'true' : 'false');
+                if (active) el.scrollIntoView({ block: 'nearest' });
+            });
+            if (searchHighlightIndex >= 0 && items[searchHighlightIndex]) {
+                input.setAttribute('aria-activedescendant', items[searchHighlightIndex].id);
+            } else {
+                input.removeAttribute('aria-activedescendant');
+            }
+        }
+
+        function handleSearchKeydown(e) {
+            const resultsContainer = document.getElementById('searchResults');
+            const isOpen = resultsContainer.classList.contains('active');
+
+            if (e.key === 'Escape') {
+                resultsContainer.classList.remove('active');
+                document.getElementById('searchInput').setAttribute('aria-expanded', 'false');
+                return;
+            }
+            if (!isOpen || searchLastResults.length === 0) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                searchHighlightIndex = (searchHighlightIndex + 1) % searchLastResults.length;
+                updateSearchHighlight();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                searchHighlightIndex = (searchHighlightIndex - 1 + searchLastResults.length) % searchLastResults.length;
+                updateSearchHighlight();
+            } else if (e.key === 'Enter') {
+                if (searchHighlightIndex >= 0 && searchLastResults[searchHighlightIndex]) {
+                    e.preventDefault();
+                    selectSearchResult(searchLastResults[searchHighlightIndex].view);
+                }
+            }
         }
 
         function showSearchResults() {
@@ -4486,9 +4629,14 @@
         }
 
         function selectSearchResult(viewName) {
-            document.getElementById('searchInput').value = '';
+            const input = document.getElementById('searchInput');
+            input.value = '';
+            input.setAttribute('aria-expanded', 'false');
+            input.removeAttribute('aria-activedescendant');
             document.getElementById('searchResults').classList.remove('active');
-            switchView(viewName);
+            searchHighlightIndex = -1;
+            searchLastResults = [];
+            navigateTo(viewName);
         }
 
         // Close search when clicking outside
@@ -4496,12 +4644,41 @@
             const searchContainer = document.querySelector('.search-container');
             if (searchContainer && !searchContainer.contains(event.target)) {
                 document.getElementById('searchResults').classList.remove('active');
+                document.getElementById('searchInput').setAttribute('aria-expanded', 'false');
             }
         });
 
         // ============= INITIALIZATION =============
 
+        let __initDone = false;
         function init() {
+            if (__initDone) return; // guards against double-firing (DOMContentLoaded + load)
+            __initDone = true;
+
+            // Build the search index from the single canonical `procedures` object —
+            // titles/categories/counts in search can no longer drift from the cards.
+            searchIndex = buildSearchIndex();
+
+            // Populate home-page specialty counts from the same canonical source.
+            document.querySelectorAll('[data-pillar-count]').forEach(el => {
+                const pillar = el.getAttribute('data-pillar-count');
+                const count = (procedures[pillar] || []).length;
+                el.textContent = count + (count === 1 ? ' Procedure' : ' Procedures');
+            });
+
+            // Lightweight automated data-integrity check (visible in the console): every
+            // procedure should have a matching reference entry, and vice versa, with no
+            // duplicate IDs. This is a quality gate, not a UI-facing feature.
+            (function checkDataIntegrity() {
+                const allIds = Object.values(procedures).flat().map(p => p.id);
+                const dupes = allIds.filter((id, i) => allIds.indexOf(id) !== i);
+                if (dupes.length) console.error('[Data integrity] Duplicate procedure IDs:', dupes);
+                const missingRef = allIds.filter(id => !referenceData[id]);
+                const orphanRef = Object.keys(referenceData).filter(id => !allIds.includes(id));
+                if (missingRef.length) console.warn('[Data integrity] Procedures with no reference entry:', missingRef);
+                if (orphanRef.length) console.warn('[Data integrity] Reference entries with no matching procedure:', orphanRef);
+            })();
+
             // Initialize theme
             initTheme();
 
@@ -4510,10 +4687,13 @@
                 renderProcedures(pillar);
             });
 
-            // Restore saved view
-            const savedView = sessionStorage.getItem('activeView') || 'home';
-            if (isValidView(savedView)) {
-                switchView(savedView);
+            // Restore active section/procedure from the URL if present (shareable/bookmarkable
+            // deep link), otherwise fall back to this tab's last-used view, otherwise home.
+            if (location.hash) {
+                restoreFromHash();
+            } else {
+                const savedView = sessionStorage.getItem('activeView') || 'home';
+                switchView(isValidView(savedView) ? savedView : 'home', { skipHistory: true, skipFocus: true });
             }
         }
 
