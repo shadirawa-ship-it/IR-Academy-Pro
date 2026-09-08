@@ -248,11 +248,29 @@
             text-align: center;
         }
 
+        .header-bar {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Invisible mirror of .search-container's width so the title
+           (flex: 1) centers itself in the space actually left over,
+           instead of the search box floating over it. */
+        .header-spacer {
+            flex: 0 0 260px;
+            visibility: hidden;
+        }
+
         header h1 {
+            flex: 1 1 auto;
+            min-width: 0;
             font-family: var(--font-header);
             font-size: 28px;
             font-weight: 700;
-            margin-bottom: 5px;
+            margin-bottom: 0;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -270,6 +288,7 @@
         header .tagline {
             font-size: 14px;
             color: var(--text-secondary);
+            margin-top: 6px;
         }
 
         .container {
@@ -782,12 +801,10 @@
 
         /* SEARCH STYLES */
         .search-container {
-            position: fixed;
-            top: 20px;
-            right: 80px;
+            position: relative;
+            flex: 0 0 260px;
             z-index: 500;
-            width: 300px;
-            max-width: 90%;
+            width: 260px;
         }
 
         .search-box {
@@ -799,13 +816,12 @@
             border-radius: 8px;
             padding: 8px 12px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            transition: all 0.3s;
+            transition: border-color 0.3s, box-shadow 0.3s;
         }
 
         .search-box:focus-within {
             border-color: var(--text-primary);
             box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-            width: 350px;
         }
 
         .search-box input {
@@ -915,13 +931,18 @@
                 font-size: 22px;
             }
 
-            .search-container {
-                width: 90%;
-                right: 5%;
-                top: 80px;
+            .header-bar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
             }
 
-            .search-box:focus-within {
+            .header-spacer {
+                display: none;
+            }
+
+            .search-container {
+                flex: 0 0 auto;
                 width: 100%;
             }
         }
@@ -971,6 +992,8 @@
     </div>
     <!-- Header -->
     <header>
+        <div class="header-bar">
+        <div class="header-spacer" aria-hidden="true"></div>
         <h1>
             <svg class="brand-mark" viewBox="0 0 512 512" role="img" aria-label="IR Academy Pro logo">
                 <defs>
@@ -992,30 +1015,29 @@
             </svg>
             <span>IR Academy Pro</span>
         </h1>
+        <div class="search-container">
+            <div class="search-box">
+                <span class="search-icon" aria-hidden="true">🔍</span>
+                <label for="searchInput" class="visually-hidden">Search procedures and devices</label>
+                <input
+                    type="text"
+                    id="searchInput"
+                    placeholder="Search procedures, devices..."
+                    role="combobox"
+                    aria-expanded="false"
+                    aria-controls="searchResults"
+                    aria-autocomplete="list"
+                    autocomplete="off"
+                    onkeyup="handleSearchKeyup(event)"
+                    onkeydown="handleSearchKeydown(event)"
+                    onfocus="showSearchResults()"
+                >
+                <div class="search-results" id="searchResults" role="listbox" aria-label="Search results"></div>
+            </div>
+        </div>
+        </div>
         <p class="tagline">Professional Interventional Radiology Training Platform</p>
     </header>
-
-    <!-- Search Container -->
-    <div class="search-container">
-        <div class="search-box">
-            <span class="search-icon" aria-hidden="true">🔍</span>
-            <label for="searchInput" class="visually-hidden">Search procedures and devices</label>
-            <input
-                type="text"
-                id="searchInput"
-                placeholder="Search procedures, devices..."
-                role="combobox"
-                aria-expanded="false"
-                aria-controls="searchResults"
-                aria-autocomplete="list"
-                autocomplete="off"
-                onkeyup="handleSearchKeyup(event)"
-                onkeydown="handleSearchKeydown(event)"
-                onfocus="showSearchResults()"
-            >
-            <div class="search-results" id="searchResults" role="listbox" aria-label="Search results"></div>
-        </div>
-    </div>
 
     <!-- Safety Banner -->
     <main class="container">
