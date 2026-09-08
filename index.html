@@ -10,6 +10,7 @@
     <meta name="author" content="IR Academy Pro">
     <meta name="robots" content="noindex, nofollow">
     <title>IR Academy Pro - Professional IR Training</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIiB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJJUiBBY2FkZW15IFBybyI+CiAgPHRpdGxlPklSIEFjYWRlbXkgUHJvPC90aXRsZT4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iaXJGYXYiIHgxPSI3MiIgeTE9IjAiIHgyPSI0NDAiIHkyPSIwIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iIzJBRTBGNSIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjAuNDYiIHN0b3AtY29sb3I9IiNGRkM5M0MiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjRkYzQjUyIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KCiAgPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIHJ4PSIxMTIiIGZpbGw9IiMwQTFBMkIiLz4KCiAgPCEtLSBzaW1wbGlmaWVkIGZvciBzbWFsbCBzaXplczogZmF0dGVyIHR1YmUsIGRlZXBlciBwaW5jaCwgaGVhdmllciB3aXJlIC0tPgogIDxwYXRoIGQ9Ik0gNzIsMTYwIEwgMTU2LDE2MCBDIDIwOCwxNjAgMjE0LDIyMiAyNTYsMjIyIEMgMjk4LDIyMiAzMDQsMTYwIDM1NiwxNjAgTCA0NDAsMTYwCiAgICAgICAgICAgTCA0NDAsMzUyIEwgMzU2LDM1MiBDIDMwNCwzNTIgMjk4LDI5MCAyNTYsMjkwIEMgMjE0LDI5MCAyMDgsMzUyIDE1NiwzNTIgTCA3MiwzNTIgWiIKICAgICAgICBmaWxsPSJ1cmwoI2lyRmF2KSIvPgogIDxwYXRoIGQ9Ik0gNDAsMjU2IEwgMzY2LDI1NiIgc3Ryb2tlPSIjMEExQTJCIiBzdHJva2Utd2lkdGg9IjQ2IiBzdHJva2UtbGluZWNhcD0icm91bmQiIGZpbGw9Im5vbmUiLz4KICA8cGF0aCBkPSJNIDQwLDI1NiBMIDM2MCwyNTYiIHN0cm9rZT0iI0ZGRkZGRiIgc3Ryb2tlLXdpZHRoPSIyMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBmaWxsPSJub25lIi8+Cjwvc3ZnPgo=">
     <style>
         :root {
             /* Color Tokens */
@@ -252,6 +253,18 @@
             font-size: 28px;
             font-weight: 700;
             margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        /* Brand mark: vessel with a localized stenosis, crossed by a guidewire */
+        .brand-mark {
+            width: 1.5em;
+            height: 1.5em;
+            flex: none;
+            display: block;
         }
 
         header .tagline {
@@ -958,7 +971,27 @@
     </div>
     <!-- Header -->
     <header>
-        <h1>🏥 IR Academy Pro</h1>
+        <h1>
+            <svg class="brand-mark" viewBox="0 0 512 512" role="img" aria-label="IR Academy Pro logo">
+                <defs>
+                    <linearGradient id="brandFlow" x1="96" y1="0" x2="416" y2="0" gradientUnits="userSpaceOnUse">
+                        <stop offset="0" stop-color="#22D3EE"/>
+                        <stop offset="0.46" stop-color="#F6C445"/>
+                        <stop offset="1" stop-color="#E5384F"/>
+                    </linearGradient>
+                </defs>
+                <rect x="16" y="16" width="480" height="480" rx="116" fill="#0A1A2B"/>
+                <rect x="17.5" y="17.5" width="477" height="477" rx="114.5" fill="none" stroke="#1B3A55" stroke-width="3"/>
+                <path d="M 96,182 L 170,182 C 214,182 224,230 256,230 C 288,230 298,182 342,182 L 416,182
+                         L 416,330 L 342,330 C 298,330 288,282 256,282 C 224,282 214,330 170,330 L 96,330 Z"
+                      fill="url(#brandFlow)"/>
+                <ellipse cx="416" cy="256" rx="16" ry="74" fill="#A32233"/>
+                <ellipse cx="96" cy="256" rx="16" ry="74" fill="#8CEDF7"/>
+                <path d="M 44,256 L 340,256" stroke="#0A1A2B" stroke-width="26" stroke-linecap="round" fill="none"/>
+                <path d="M 44,256 L 340,256" stroke="#F2FBFF" stroke-width="13" stroke-linecap="round" fill="none"/>
+            </svg>
+            <span>IR Academy Pro</span>
+        </h1>
         <p class="tagline">Professional Interventional Radiology Training Platform</p>
     </header>
 

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="IR Academy Pro">
+  <title>IR Academy Pro</title>
+  <defs>
+    <linearGradient id="irFav" x1="72" y1="0" x2="440" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2AE0F5"/>
+      <stop offset="0.46" stop-color="#FFC93C"/>
+      <stop offset="1" stop-color="#FF3B52"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="0" width="512" height="512" rx="112" fill="#0A1A2B"/>
+
+  <!-- simplified for small sizes: fatter tube, deeper pinch, heavier wire -->
+  <path d="M 72,160 L 156,160 C 208,160 214,222 256,222 C 298,222 304,160 356,160 L 440,160
+           L 440,352 L 356,352 C 304,352 298,290 256,290 C 214,290 208,352 156,352 L 72,352 Z"
+        fill="url(#irFav)"/>
+  <path d="M 40,256 L 366,256" stroke="#0A1A2B" stroke-width="46" stroke-linecap="round" fill="none"/>
+  <path d="M 40,256 L 360,256" stroke="#FFFFFF" stroke-width="22" stroke-linecap="round" fill="none"/>
+</svg>

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="IR Academy Pro">
+  <title>IR Academy Pro</title>
+  <!-- Single-colour mark. Change `fill`/`stroke` on .ir-mono to recolour (currentColor-friendly). -->
+  <g class="ir-mono" fill="currentColor" stroke="currentColor">
+    <path d="M 96,182 L 170,182 C 214,182 224,230 256,230 C 288,230 298,182 342,182 L 416,182
+             L 416,330 L 342,330 C 298,330 288,282 256,282 C 224,282 214,330 170,330 L 96,330 Z"
+          stroke="none"/>
+    <ellipse cx="96" cy="256" rx="16" ry="74" stroke="none" opacity="0.55"/>
+    <ellipse cx="416" cy="256" rx="16" ry="74" stroke="none" opacity="0.55"/>
+  </g>
+  <!-- guidewire knocked out of the vessel so the mark stays legible in one colour -->
+  <path d="M 44,256 L 340,256" stroke="#FFFFFF" stroke-width="30" stroke-linecap="round" fill="none"/>
+  <path d="M 44,256 L 340,256" stroke="currentColor" stroke-width="13" stroke-linecap="round" fill="none"/>
+</svg>

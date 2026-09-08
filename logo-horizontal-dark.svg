@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 260" width="1040" height="260" role="img" aria-label="IR Academy Pro — Interventional Radiology Training">
+  <title>IR Academy Pro</title>
+  <defs>
+    <linearGradient id="lkFlowD" x1="96" y1="0" x2="416" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#22D3EE"/>
+      <stop offset="0.46" stop-color="#F6C445"/>
+      <stop offset="1" stop-color="#E5384F"/>
+    </linearGradient>
+  </defs>
+
+  <!-- mark -->
+  <g transform="translate(6,14) scale(0.45)">
+    <path d="M 96,182 L 170,182 C 214,182 224,230 256,230 C 288,230 298,182 342,182 L 416,182
+             L 416,330 L 342,330 C 298,330 288,282 256,282 C 224,282 214,330 170,330 L 96,330 Z"
+          fill="url(#lkFlowD)"/>
+    <ellipse cx="416" cy="256" rx="16" ry="74" fill="#A32233"/>
+    <ellipse cx="96" cy="256" rx="16" ry="74" fill="#8CEDF7"/>
+    <path d="M 44,256 L 340,256" stroke="#0A1A2B" stroke-width="26" stroke-linecap="round" fill="none"/>
+    <path d="M 44,256 L 340,256" stroke="#F2FBFF" stroke-width="13" stroke-linecap="round" fill="none"/>
+  </g>
+
+  <!-- wordmark -->
+  <text x="266" y="124" font-family="Archivo, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
+        font-size="76" font-weight="800" letter-spacing="0.5" fill="#FFFFFF">IR ACADEMY<tspan dx="16" fill="#F6C445">PRO</tspan></text>
+  <text x="269" y="176" font-family="Archivo, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
+        font-size="21" font-weight="600" letter-spacing="4.2" fill="#8FB3CC">INTERVENTIONAL RADIOLOGY TRAINING</text>
+</svg>
